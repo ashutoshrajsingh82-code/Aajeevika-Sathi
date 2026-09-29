@@ -1,0 +1,1 @@
+export default function manifest(){return {name:'Aajeevika Sathi',short_name:'Sathi',description:'Voice-first livelihood pathway prototype',start_url:'/',display:'standalone',background_color:'#f5f8f8',theme_color:'#102b3f',icons:[]}}

@@ -1,0 +1,6 @@
+import './globals.css';
+import 'leaflet/dist/leaflet.css';
+import Link from 'next/link';
+import {Sprout, ArrowUpRight} from 'lucide-react';
+export const metadata={title:'Aajeevika Sathi | From your voice to your livelihood',description:'A multilingual voice-first livelihood pathway prototype for PM-AJAY.'};
+export default function RootLayout({children}){return <html lang="en"><body><header className="topbar"><div className="container navrow"><Link href="/" className="brand"><span className="brandmark"><Sprout size={19}/></span><span>AAJEEVIKA <span style={{color:'#168f91'}}>SATHI</span></span></Link><nav className="navlinks"><Link href="/beneficiary">Beneficiary</Link><Link href="/counsellor">Counsellor</Link><Link href="/admin">Official Dashboard</Link><Link href="/demo" className="button primary small nav-cta">Open Demo <ArrowUpRight size={14}/></Link></nav></div></header>{children}<footer className="footer"><div className="container footerrow"><span>AAJEEVIKA SATHI · From your voice to your livelihood</span><span>Prototype demonstration · No government system connected · No employment outcomes claimed</span></div></footer><script dangerouslySetInnerHTML={{__html:`if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}`}}/></body></html>}

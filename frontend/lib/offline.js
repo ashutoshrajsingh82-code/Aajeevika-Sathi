@@ -1,0 +1,29 @@
+const KEY='aajeevika_offline_demo_v1';
+export function readOffline(){if(typeof window==='undefined')return {sessions:[],handoffs:[],followups:[],selections:[]};try{return JSON.parse(localStorage.getItem(KEY)||'null')||{sessions:[],handoffs:[],followups:[],selections:[]}}catch{return {sessions:[],handoffs:[],followups:[],selections:[]}}}
+function write(s){localStorage.setItem(KEY,JSON.stringify(s));return s}
+const PATHS=[
+ {id:'demo-tailoring',title:'Tailoring and garment enterprise skills',sector:'Apparel',skills:['stitching','measurement','garment work','self employment'],self_employment:true},
+ {id:'demo-food',title:'Food processing and safe packaging',sector:'Food Processing',skills:['food','packaging','hygiene','small business'],self_employment:true},
+ {id:'demo-electrical',title:'Basic electrical maintenance',sector:'Electrical',skills:['electrical','wiring','repair','technical work'],self_employment:false},
+ {id:'demo-solar',title:'Solar installation foundations',sector:'Renewable Energy',skills:['solar','electrical','installation','maintenance'],self_employment:false},
+ {id:'demo-mobile',title:'Mobile phone repair foundations',sector:'Electronics',skills:['mobile','repair','electronics','technical work'],self_employment:true},
+ {id:'demo-digital',title:'Digital service assistance',sector:'Digital Services',skills:['computer','digital forms','typing','customer service'],self_employment:true},
+ {id:'demo-agri',title:'Agriculture allied enterprise',sector:'Agriculture',skills:['agriculture','farm','dairy','animal care','enterprise'],self_employment:true}];
+export function offlineDemo(profile,name='Sample persona'){
+ const terms=[...(profile.skills||[]),...(profile.interests||[]),profile.family_occupation||'',profile.current_occupation||''].join(' ').toLowerCase();
+ const preferences=profile.employment_preference;
+ const ranked=PATHS.map(p=>{const hits=p.skills.filter(s=>terms.includes(s));const pref=!preferences||preferences==='either'||(preferences==='self_employment'&&p.self_employment)||(preferences==='wage_employment'&&!p.self_employment);return {p,hits,pref,rank:hits.length*.6+(pref?.2:0)+.1}}).sort((a,b)=>b.rank-a.rank).slice(0,3);
+ const recs=ranked.map(({p,hits})=>({pathway:{...p,description:'Simulated demo pathway concept; not an official qualification.',duration_hours:null,source:'SIMULATED DEMO — not a verified active QP',source_url:''},explanation:{relevance:hits.length>1?'Strong signals':hits.length?'Some signals':'Explore this option',matched_terms:hits,demand:'Sample signal — not measured',feasibility:'Sample centre; verify before travel',preference:preferences||'Preference not shared',eligibility:'Needs counsellor verification',signals:{interest:hits.length?'some':'limited',skills:hits.length?'some overlap':'skills to build',local_demand:'synthetic neutral sample',feasibility:'sample centre'}} ,already_has:p.skills.filter(s=>(profile.skills||[]).some(h=>h.toLowerCase().includes(s))),to_develop:p.skills.filter(s=>!(profile.skills||[]).some(h=>h.toLowerCase().includes(s))),centre:{id:'offline-sample',name:'Offline sample centre',district:profile.district||'Sample district',block:'Demo only',latitude:profile.latitude||21.1458,longitude:profile.longitude||79.0882,address:'Not a real training location',contact:'NOT VERIFIED',source:'SIMULATED SAMPLE'},distance_km:null,demand:'Sample signal',eligibility:'Needs counsellor verification',within_travel_limit:true,source_notice:'Offline cached demo data — verify all details.'}));
+ const sid=`offline-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;const state=readOffline();const session={id:sid,name,language:profile.language||'en',district:profile.district||'Sample district',state:'COMPLETE',profile,consent:true,recommendations:recs,created_at:new Date().toISOString()};state.sessions.unshift(session);write(state);return session;
+}
+export function offlineAdd(collection,item){const s=readOffline();s[collection]=[item,...(s[collection]||[])];write(s);return item}
+export function offlineUpdate(collection,id,fields){const s=readOffline();s[collection]=(s[collection]||[]).map(x=>x.id===id?{...x,...fields}:x);write(s);return s[collection].find(x=>x.id===id)}
+export function offlineSelect(session_id,pathway_id){return offlineAdd('selections',{session_id,pathway_id,created_at:new Date().toISOString()})}
+export function offlineDelete(session_id){const s=readOffline();s.sessions=s.sessions.filter(x=>x.id!==session_id);s.handoffs=s.handoffs.filter(x=>x.session_id!==session_id);s.followups=s.followups.filter(x=>x.session_id!==session_id);s.selections=s.selections.filter(x=>x.session_id!==session_id);write(s)}
+export function offlineSummary(){
+ const s=readOffline(),languageCounts={},districtCounts={};
+ for(const x of s.sessions){languageCounts[x.language]=(languageCounts[x.language]||0)+1;districtCounts[x.district]=(districtCounts[x.district]||0)+1}
+ const recommendationCount=s.sessions.reduce((a,x)=>a+x.recommendations.length,0);
+ const hide=n=>n<5?null:n,smallCells=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,hide(v)]));
+ return {counts:{beneficiaries_reached:hide(s.sessions.length),profiles_completed:hide(s.sessions.length),recommendations_generated:hide(recommendationCount),counsellor_handoffs:hide(s.handoffs.length)},languages:smallCells(languageCounts),districts:smallCells(districtCounts),interests:{},funnel:[{stage:'profiles',count:hide(s.sessions.length)},{stage:'recommendations',count:hide(recommendationCount)},{stage:'selected',count:hide(s.selections.length)},{stage:'enrolled',count:hide(s.followups.filter(x=>['enrolled','training','completed'].includes(x.stage)).length)},{stage:'placed / enterprise',count:hide(s.followups.filter(x=>x.stage==='placed').length)}],demand_capacity:[],data_notice:'Browser-local synthetic demo data. Groups below five are suppressed. Not connected to the database or a government service.',generated_at:new Date().toISOString()}
+}

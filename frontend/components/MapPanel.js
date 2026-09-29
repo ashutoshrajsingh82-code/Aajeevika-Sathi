@@ -1,0 +1,5 @@
+'use client';
+import {MapContainer,TileLayer,Marker,Popup,Circle} from 'react-leaflet';
+import L from 'leaflet';
+const icon=L.divIcon({className:'maplabel',html:'<span style="font-size:22px">📍</span>',iconSize:[28,28],iconAnchor:[14,24]});
+export default function MapPanel({centres=[],profile}){const center=profile?.latitude&&profile?.longitude?[profile.latitude,profile.longitude]:[21.1458,79.0882];return <div className="map"><MapContainer center={center} zoom={profile?9:5} scrollWheelZoom={false} style={{height:'100%',width:'100%'}}><TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>{centres.map(c=><Marker key={c.id} position={[c.latitude,c.longitude]} icon={icon}><Popup><b>{c.name}</b><br/>{c.district} · {c.block}<br/><small>{c.source}</small></Popup></Marker>)}{profile?.latitude&&<Circle center={center} radius={(profile.max_travel_distance||10)*1000} pathOptions={{color:'#168f91',fillOpacity:.08}}/>}</MapContainer></div>}
