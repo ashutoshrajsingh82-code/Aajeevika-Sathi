@@ -96,10 +96,11 @@ def product_analytics(
         db.query(Handoff.session_id)
     )
 
-    training_referrals = _distinct_session_count(
-        db.query(Handoff.session_id)
-        .filter(Handoff.training_options != [])
-    )
+    training_referrals = len({
+        row.session_id
+        for row in db.query(Handoff).all()
+        if isinstance(row.training_options, list) and row.training_options
+    })
 
     verified_training_outcomes = (
         db.query(Outcome)
