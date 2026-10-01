@@ -1,7 +1,8 @@
 """Idempotent seed: simulated demo pathways/centres/demand, never beneficiary outcomes."""
-from app.db import Base,engine,SessionLocal
+from app.db import SessionLocal
 from app.models import Pathway,TrainingCentre,DemandSignal
-Base.metadata.create_all(bind=engine)
+from app.config import DEMO_MODE
+from app.security import ensure_demo_accounts
 db=SessionLocal()
 pathways=[
 ("demo-tailoring","Tailoring and garment enterprise skills","Apparel","garment work;tailoring;stitching;measurement;self employment",True),
@@ -37,5 +38,7 @@ for district in ["Nagpur","Pune"]:
     for _,_,sector,_,_ in pathways:
         exists=db.query(DemandSignal).filter_by(district=district,sector=sector).first()
         if not exists:db.add(DemandSignal(district=district,sector=sector,demand_label="Sample signal",source="SIMULATED — not measured local demand",year=2026,capacity=0))
-db.commit();db.close()
+db.commit()
+if DEMO_MODE:ensure_demo_accounts(db)
+db.close()
 print("Seeded demo pathways, centres, and explicitly synthetic demand only.")

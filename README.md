@@ -26,6 +26,7 @@ cd C:\Users\ASHUTOSH\SIH97\backend
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+alembic upgrade head
 python seed.py
 uvicorn app.main:app --reload --port 8000
 ```
@@ -55,7 +56,11 @@ npm run build
 
 Landing → Guided Demo → Beneficiary → load synthetic Sita/Rahul/Aman → inspect profile and pathway reasoning → choose a pathway → add a follow-up → request counsellor → inspect Counsellor queue → Official Dashboard → withdraw/delete session.
 
-The live interview path starts with disclosure and consent, asks one fixed question per turn, supports browser voice and text, confirms the profile, then returns pathways. Browser voice needs a supported browser and microphone permission. Whisper is optional; with no local model, audio upload falls back to browser voice/text. After the PWA shell and route assets have been loaded once, synthetic persona recommendations, pathway selection, handoff and follow-up can use browser-local storage while the API is offline. Browser-local demo events are clearly separated from database records.
+The live interview path starts with consent, records each text or voice transcript in the backend, confirms the profile, then persists recommendations, centre matches, an action plan, a case and an initial follow-up. Selecting a pathway creates a counsellor handoff. The counsellor screen can update the case outcome, and aggregate analytics read those saved outcomes. Browser voice needs a supported browser and microphone permission. Whisper is optional; if transcription is unavailable, use browser voice or text. Only the explicitly selected synthetic persona offers a browser-local offline demo fallback; ordinary interview, selection, handoff and follow-up actions report an error when they cannot be saved to the API.
+
+See [docs/end-to-end-flow.md](docs/end-to-end-flow.md) for the lifecycle, records, API sequence and manual verification procedure. The backend now uses versioned Alembic migrations; run `alembic upgrade head` before seeding or starting it. Local demo sign-ins are `admin` / `admin-demo-change-me` and `counsellor` / `counsellor-demo-change-me`. For production, set `DEMO_MODE=false`, a random `AUTH_SECRET`, and `AUTO_CREATE_SCHEMA=false`; create individual staff accounts with `python -m app.manage_users add-user --role admin --username <name>` and the corresponding `counsellor` command. The CLI prompts for passwords without echo. See the flow guide for password reset and account disabling.
+
+The optional, disabled-by-default conversational interview and environment settings are described in [docs/ai-safety.md](docs/ai-safety.md). Set `AI_PROVIDER=ollama` with `AI_BASE_URL=http://localhost:11434/v1` and an `AI_MODEL` to use an OpenAI-compatible local Ollama server. When configured, the regular text and voice-transcript message flow validates structured profile extractions, retains each raw answer, and falls back to the guided interview if the provider is unavailable or returns invalid output.
 
 ## Environment
 

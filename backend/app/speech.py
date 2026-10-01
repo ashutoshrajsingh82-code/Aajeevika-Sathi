@@ -1,11 +1,16 @@
 from abc import ABC,abstractmethod
 import os
 
-class SpeechProvider(ABC):
+class SpeechToTextProvider(ABC):
     @abstractmethod
     async def transcribe(self,audio:bytes,filename:str,language:str)->dict: ...
+
+class TextToSpeechProvider(ABC):
     @abstractmethod
     async def synthesize(self,text:str,language:str)->dict: ...
+
+class SpeechProvider(SpeechToTextProvider,TextToSpeechProvider):
+    """Compatibility composite for providers implementing both voice directions."""
 
 class WhisperSpeechProvider(SpeechProvider):
     async def transcribe(self,audio,filename,language):

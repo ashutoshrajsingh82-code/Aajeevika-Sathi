@@ -6,7 +6,7 @@ QUESTIONS={
 "hi":{"education_level":"आपने कितनी पढ़ाई पूरी की है? आप छोड़ सकते हैं।","age_band":"आपकी उम्र किस समूह में है? जैसे 18 से 24। आप छोड़ सकते हैं।","current_occupation":"आप अभी कौन सा काम करते हैं? आप छोड़ सकते हैं।","family_occupation":"आपके परिवार में कौन सा काम होता है? आप छोड़ सकते हैं।","skills":"आपको कौन से काम या हुनर आते हैं? आप छोड़ सकते हैं।","interests":"आप कौन सा काम सीखना चाहेंगे? आप छोड़ सकते हैं।","tools":"क्या आपके पास औज़ार, ज़मीन या काम की जगह है? आप छोड़ सकते हैं।","mobility_level":"क्या आप प्रशिक्षण के लिए यात्रा कर सकते हैं? आप छोड़ सकते हैं।","max_travel_distance":"आप प्रशिक्षण के लिए कितनी दूर जा सकते हैं? आप छोड़ सकते हैं।","employment_preference":"आप नौकरी चाहेंगे, अपना काम या दोनों? आप छोड़ सकते हैं।","time_available":"आप हर हफ्ते प्रशिक्षण के लिए कितना समय दे सकते हैं? आप छोड़ सकते हैं।","district":"आपका जिला कौन सा है? आप छोड़ सकते हैं।","block":"आपका ब्लॉक या शहर कौन सा है? आप छोड़ सकते हैं।","constraints":"क्या कोई बात प्रशिक्षण में कठिनाई कर सकती है? आप छोड़ सकते हैं।","training_duration_preference":"आपके लिए कितने समय का प्रशिक्षण ठीक रहेगा? आप छोड़ सकते हैं।","confirm":"क्या यह जानकारी सही है? विकल्प देखने के लिए हाँ कहें, बदलने के लिए नहीं कहें।"}}
 SKIP={"skip","pass","not sure","छोड़ें","छोड़ो","पता नहीं","नहीं बताना"}
 
-def first_slot(profile): return next((s for s in SLOTS if s not in profile),"confirm")
+def first_slot(profile): return next((s for s in SLOTS if s not in profile and s not in profile.get("skipped_slots",[])),"confirm")
 def question(slot,language): return QUESTIONS.get(language,QUESTIONS["en"]).get(slot,QUESTIONS["en"].get(slot,"Tell me a little more. You can say skip."))
 
 def normalize(slot,text):
@@ -43,18 +43,19 @@ def transition(session,text):
         if text.strip().lower() not in {"yes","y","हाँ","हां","हो","agree","i agree"}:
             return "CONSENT",profile,"Please choose yes to consent, or leave the assessment. / सहमति के लिए हाँ कहें।"
         return "INTERVIEW",profile,question(first_slot(profile),session.language)
-    if session.state=="CONFIRMATION":
+    if session.state=="PROFILE_REVIEW":
         if text.strip().lower() in {"yes","y","हाँ","हां","हो","correct"}:
             return "RECOMMENDATION",profile,("Your profile is ready. I’ll show pathways from the demo catalogue." if session.language=="en" else "आपकी जानकारी तैयार है। अब नमूना आजीविका विकल्प दिखाता हूँ।")
-        profile.clear();return "INTERVIEW",profile,question(first_slot(profile),session.language)
+        return "PROFILE_REVIEW",profile,("You can correct or remove details in your profile below, then confirm when it looks right." if session.language=="en" else "नीचे अपनी जानकारी सुधारें या हटाएँ, फिर सही होने पर पुष्टि करें।")
     slot=first_slot(profile)
     if slot=="confirm":
         summary=", ".join(f"{k.replace('_',' ')}: {v}" for k,v in profile.items())
-        return "CONFIRMATION",profile,(f"I heard: {summary}. Is this right? Say yes or no." if session.language=="en" else f"मैंने सुना: {summary}. क्या यह सही है? हाँ या नहीं कहें।")
+        return "PROFILE_REVIEW",profile,(f"I heard: {summary}. Is this right? Say yes or no." if session.language=="en" else f"मैंने सुना: {summary}. क्या यह सही है? हाँ या नहीं कहें।")
     value=normalize(slot,text)
     if value is not None:profile[slot]=value
+    else:profile["skipped_slots"]=list(dict.fromkeys([*profile.get("skipped_slots",[]),slot]))
     next_=first_slot(profile)
     if next_=="confirm":
         summary=", ".join(f"{k.replace('_',' ')}: {v}" for k,v in profile.items())
-        return "CONFIRMATION",profile,(f"I heard: {summary}. Is this right? Say yes or no." if session.language=="en" else f"मैंने सुना: {summary}. क्या यह सही है? हाँ या नहीं कहें।")
+        return "PROFILE_REVIEW",profile,(f"I heard: {summary}. Is this right? Say yes or no." if session.language=="en" else f"मैंने सुना: {summary}. क्या यह सही है? हाँ या नहीं कहें।")
     return "INTERVIEW",profile,question(next_,session.language)
