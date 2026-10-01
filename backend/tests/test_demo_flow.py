@@ -3,6 +3,9 @@ from app.main import app
 from app.db import SessionLocal
 from app.models import InterviewSession,InterviewAnswer,RecommendationRecord,AuditLog,AuthUser
 from app.config import DEMO_ADMIN_USERNAME,DEMO_ADMIN_PASSWORD,DEMO_COUNSELLOR_USERNAME,DEMO_COUNSELLOR_PASSWORD
+from app.security import hash_password
+import uuid
+from datetime import date,timedelta
 
 def test_demo_profile_select_followup_handoff_and_withdrawal():
     client=TestClient(app)
@@ -79,6 +82,13 @@ def test_consent_fixed_interview_confirmation_and_recommendations():
         assert case['case']['selected_pathway_id']==pathway_id
         assert case['handoffs'] and case['followups']
         assert client.post('/api/v1/auth/login',json={'username':DEMO_COUNSELLOR_USERNAME,'password':DEMO_COUNSELLOR_PASSWORD}).status_code==200
+        handoff_id=case['handoffs'][0]['id']
+        assert client.get(f'/api/v1/staff/case/{sid}').status_code==403
+        assert client.post(f'/api/v1/handoff/{handoff_id}/assign').status_code==200
+        staff_case=client.get(f'/api/v1/staff/case/{sid}')
+        assert staff_case.status_code==200
+        assert staff_case.json()['case']['structured_action_plan']['pathway']['id']==pathway_id
+        assert staff_case.json()['handoffs'][0]['supporting_evidence'] is not None
         outcome=client.patch(f'/api/v1/case/{sid}/outcome',json={'outcome':'employed','note':'Verified by counsellor'})
         assert outcome.status_code==200
         assert outcome.json()['case']['status']=='completed'
@@ -107,3 +117,65 @@ def test_staff_auth_is_role_limited_and_cookie_based():
         assert stored.password_hash.startswith('pbkdf2_sha256$')
         assert stored.password_hash!=DEMO_ADMIN_PASSWORD
     finally:db.close()
+
+def test_action_plan_handoff_assignment_workflow_and_case_isolation():
+    client=TestClient(app)
+    result=client.post('/api/v1/demo/profile',json={'district':'Nagpur','skills':['basic stitching'],'interests':['tailoring']})
+    assert result.status_code==200
+    sid=result.json()['session']['session_id']
+    recommendations=result.json()['recommendations']
+    if not recommendations:
+        client.delete(f'/api/v1/interview/session/{sid}')
+        return
+    pathway_id=recommendations[0]['pathway']['id']
+    selected=client.post('/api/v1/recommendations/select',json={'session_id':sid,'pathway_id':pathway_id})
+    assert selected.status_code==200
+    handoff_id=selected.json()['handoff_id']
+    counsellor=TestClient(app)
+    assert counsellor.post('/api/v1/auth/login',json={'username':DEMO_COUNSELLOR_USERNAME,'password':DEMO_COUNSELLOR_PASSWORD}).status_code==200
+    assert counsellor.get(f'/api/v1/staff/case/{sid}').status_code==403
+    assert counsellor.patch(f'/api/v1/case/{sid}/outcome',json={'outcome':'training','note':'test verification basis'}).status_code==403
+    assert counsellor.post(f'/api/v1/handoff/{handoff_id}/assign').status_code==200
+    case=counsellor.get(f'/api/v1/staff/case/{sid}')
+    assert case.status_code==200
+    plan=case.json()['case']['structured_action_plan']
+    assert plan['pathway']['id']==pathway_id and plan['steps']
+    assert case.json()['handoffs'][0]['ai_brief']['generated_by']=='validated_data_template'
+    assert counsellor.patch(f'/api/v1/staff/action-plans/{sid}/steps/apply_or_enrol',json={'status':'COMPLETED'}).status_code==409
+    assert counsellor.patch(f'/api/v1/staff/action-plans/{sid}/steps/verify_pathway',json={'status':'COMPLETED'}).status_code==200
+    assert counsellor.patch(f'/api/v1/staff/action-plans/{sid}/steps/confirm_training',json={'status':'COMPLETED'}).status_code==200
+    assert counsellor.patch(f'/api/v1/staff/action-plans/{sid}/steps/prepare_documents',json={'status':'COMPLETED'}).status_code==200
+    assert counsellor.patch(f'/api/v1/staff/action-plans/{sid}/steps/apply_or_enrol',json={'status':'COMPLETED'}).status_code==200
+    assert counsellor.patch(f'/api/v1/handoff/{handoff_id}/workflow',json={'status':'IN_REVIEW'}).status_code==200
+    followups=counsellor.get('/api/v1/followups').json()
+    configured=set(counsellor.get('/api/v1/followups/schedule-options').json()['interval_days'])
+    assert configured.issubset({x['schedule_offset_days'] for x in followups if x['session_id']==sid})
+    target=next(x for x in followups if x['session_id']==sid and x['status']=='SCHEDULED')
+    moved=counsellor.patch(f"/api/v1/followups/{target['id']}",json={'status':'RESCHEDULED','new_due_date':(date.today()+timedelta(days=4)).isoformat()})
+    assert moved.status_code==200 and moved.json()['followup']['status']=='RESCHEDULED'
+    replacement=moved.json()['replacement']
+    assert replacement['rescheduled_from_id']==target['id']
+    assert counsellor.patch(f"/api/v1/followups/{replacement['id']}",json={'status':'CONTACTED'}).status_code==200
+    assert counsellor.patch(f"/api/v1/followups/{replacement['id']}",json={'status':'COMPLETED'}).status_code==200
+    report=client.post('/api/v1/outcomes',json={'session_id':sid,'outcome':'TRAINING_STARTED','note':'Beneficiary says training began.'})
+    assert report.status_code==200 and report.json()['verification_status']=='UNVERIFIED'
+    assert counsellor.get(f'/api/v1/followups/{replacement["id"]}/questions').json()['ai_used'] is False
+    verified=counsellor.patch(f"/api/v1/outcomes/{report.json()['id']}/verify",json={'verification_status':'VERIFIED','note':'Confirmed during counsellor follow-up.'})
+    assert verified.status_code==200 and verified.json()['verification_status']=='VERIFIED'
+    assert counsellor.get(f'/api/v1/followups/{replacement["id"]}/questions').json()['questions'][0]=='Did you complete the recommended training?'
+    second=TestClient(app);username=f"other-{uuid.uuid4().hex[:10]}";password="test-only-password"
+    db=SessionLocal()
+    try:
+        db.add(AuthUser(username=username,password_hash=hash_password(password),role='counsellor',active=True));db.commit()
+    finally:db.close()
+    try:
+        assert second.post('/api/v1/auth/login',json={'username':username,'password':password}).status_code==200
+        assert second.get(f'/api/v1/staff/case/{sid}').status_code==403
+        assert second.patch(f"/api/v1/outcomes/{report.json()['id']}/verify",json={'verification_status':'VERIFIED','note':'Unauthorized verification attempt'}).status_code==403
+    finally:
+        db=SessionLocal()
+        try:
+            user=db.query(AuthUser).filter_by(username=username).one_or_none()
+            if user:db.delete(user);db.commit()
+        finally:db.close()
+        assert client.delete(f'/api/v1/interview/session/{sid}').json()['deleted'] is True

@@ -1,0 +1,15 @@
+{
+  "notice": "Synthetic benchmark fixtures only. These statements are fabricated test data and do not describe any real government scheme.",
+  "documents": [
+    {"id":"synthetic-alpha","title":"Synthetic Alpha notice","text":"DEMO DATA: Simulated programme Alpha provides monetary assistance of 200 training tokens to enrolled participants. Applications are reviewed at the sample district desk."},
+    {"id":"synthetic-beta","title":"Synthetic Beta notice","text":"DEMO DATA: Simulated programme Beta offers weekend tailoring classes at the sample learning room. The location is illustrative only."}
+  ],
+  "questions": [
+    {"query":"What monetary assistance does synthetic Alpha provide?","relevant_document_ids":["synthetic-alpha"],"filters":{"category":"scheme"}},
+    {"query":"How much financial help can enrolled participants receive?","relevant_document_ids":["synthetic-alpha"],"filters":{"category":"scheme"}},
+    {"query":"alpha assistance 200 tokens","relevant_document_ids":["synthetic-alpha"],"filters":{"category":"scheme"}},
+    {"query":"Tell me about the sample weekend sewing course","relevant_document_ids":["synthetic-beta"],"filters":{"category":"course"}},
+    {"query":"kya Alpha mein monetary help milti hai","relevant_document_ids":["synthetic-alpha"],"filters":{"category":"scheme"}},
+    {"query":"What is the exact payment in Synthetic Gamma?","relevant_document_ids":[],"filters":{"category":"scheme"}}
+  ]
+}

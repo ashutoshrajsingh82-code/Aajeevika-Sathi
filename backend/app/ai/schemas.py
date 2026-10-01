@@ -95,3 +95,6 @@ class CounsellorBrief(StrictSchema):
     constraints_to_discuss:list[str]=Field(default_factory=list,max_length=12)
     verification_questions:list[str]=Field(default_factory=list,max_length=12)
     human_review_required:bool=True
+
+class FollowUpQuestionSelection(StrictSchema):
+    question_ids:list[Literal["review_pathway","enrolment","barrier","complete_training","work_status","continue_work","verify_report","support"]]=Field(min_length=1,max_length=3)

@@ -19,3 +19,10 @@ if not DEMO_MODE:
     if not AUTH_COOKIE_SECURE:raise RuntimeError("AUTH_COOKIE_SECURE must be true outside demo mode")
     if AUTH_SECRET=="local-demo-signing-key-change-before-deploy" or "replace-with-" in AUTH_SECRET.lower():raise RuntimeError("Replace the example signing secret before production")
 WEIGHTS={"interest":.30,"skills":.25,"demand":.20,"feasibility":.15,"preference":.10}
+def _followup_days():
+    raw=os.getenv("FOLLOWUP_INTERVAL_DAYS","7,30,90")
+    try:days=tuple(sorted({int(item.strip()) for item in raw.split(",") if item.strip()}))
+    except ValueError as exc:raise RuntimeError("FOLLOWUP_INTERVAL_DAYS must be a comma-separated list of integers") from exc
+    if not days or any(day<1 or day>730 for day in days):raise RuntimeError("FOLLOWUP_INTERVAL_DAYS values must be between 1 and 730 days")
+    return days
+FOLLOWUP_INTERVAL_DAYS=_followup_days()

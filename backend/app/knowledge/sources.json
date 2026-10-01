@@ -1,0 +1,52 @@
+{
+  "approved_hosts": [
+    "socialjustice.gov.in",
+    "pmagy.gov.in",
+    "pmajay.dosje.gov.in",
+    "rural.gov.in",
+    "msde.gov.in",
+    "nqr.gov.in"
+  ],
+  "sources": [
+    {
+      "title": "PM-AJAY scheme page",
+      "url": "https://socialjustice.gov.in/schemes/104",
+      "authority": "Department of Social Justice and Empowerment",
+      "ministry": "Ministry of Social Justice and Empowerment",
+      "scheme_name": "Pradhan Mantri Anusuchit Jaati Abhyuday Yojana (PM-AJAY)",
+      "document_type": "official_scheme_page",
+      "source_type": "official_government",
+      "verification_status": "OFFICIAL_UNVERIFIED"
+    },
+    {
+      "title": "PM-AJAY Guidelines, May 2023",
+      "url": "https://socialjustice.gov.in/writereaddata/UploadFile/31121740857806.pdf",
+      "authority": "Department of Social Justice and Empowerment",
+      "ministry": "Ministry of Social Justice and Empowerment",
+      "scheme_name": "Pradhan Mantri Anusuchit Jaati Abhyuday Yojana (PM-AJAY)",
+      "document_type": "scheme_guidelines",
+      "publication_date": "2023-05-01",
+      "source_type": "official_government",
+      "verification_status": "OFFICIAL_UNVERIFIED"
+    },
+    {
+      "title": "PM-AJAY Guidelines page",
+      "url": "https://pmagy.gov.in/Guidelines-All-Languages",
+      "authority": "Department of Social Justice and Empowerment",
+      "ministry": "Ministry of Social Justice and Empowerment",
+      "scheme_name": "Pradhan Mantri Anusuchit Jaati Abhyuday Yojana (PM-AJAY)",
+      "document_type": "official_scheme_index",
+      "source_type": "official_government",
+      "verification_status": "OFFICIAL_UNVERIFIED"
+    },
+    {
+      "title": "National Qualifications Register overview",
+      "url": "https://www.nqr.gov.in/aboutus",
+      "authority": "National Council for Vocational Education and Training",
+      "ministry": "Ministry of Skill Development and Entrepreneurship",
+      "document_type": "official_qualification_registry_page",
+      "source_type": "official_government",
+      "verification_status": "OFFICIAL_UNVERIFIED"
+    }
+  ]
+}
