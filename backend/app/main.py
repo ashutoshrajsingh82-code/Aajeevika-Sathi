@@ -141,6 +141,8 @@ from .knowledge.sources import (
 from .ai.agents.livelihood import LivelihoodAgentService
 from .ai.agents.livelihood_schemas import AgentRunRequest
 
+from .product_analytics import router as product_analytics_router
+
 
 # ---------------------------------------------------------------------------
 # DATABASE / DEVELOPMENT SCHEMA SETUP
@@ -320,6 +322,9 @@ app.add_middleware(
     ],
     allow_headers=["*"],
 )
+
+
+app.include_router(product_analytics_router)
 
 
 staff_required = require_roles("admin", "counsellor")
