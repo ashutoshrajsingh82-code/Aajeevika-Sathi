@@ -54,7 +54,6 @@ def test_phase_9d_rag_evaluation_categories_and_analytics():
         assert metrics["outdated_documents_detected"] >= 1
         assert body["data_quality"]["ground_truth_accuracy_measured"] is False
         assert body["data_quality"]["raw_beneficiary_records_exposed"] is False
-        assert set(c["category"] for c in body["categories"].values()) if False else True
         for category, *_ in cases:
             assert category in body["categories"]
     finally:
