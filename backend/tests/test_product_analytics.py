@@ -14,7 +14,12 @@ from app.models import (
     Outcome,
     Pathway,
 )
-from app.config import (\n    DEMO_ADMIN_USERNAME,\n    DEMO_ADMIN_PASSWORD,\n    DEMO_COUNSELLOR_USERNAME,\n    DEMO_COUNSELLOR_PASSWORD,\n)
+from app.config import (
+    DEMO_ADMIN_USERNAME,
+    DEMO_ADMIN_PASSWORD,
+    DEMO_COUNSELLOR_USERNAME,
+    DEMO_COUNSELLOR_PASSWORD,
+)
 
 
 def test_phase_9a_product_analytics_measures_persisted_workflow_data():
