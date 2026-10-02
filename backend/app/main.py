@@ -3749,7 +3749,7 @@ def create_handoff(
         "handoff_created",
         "session",
         s.id,
-        body.reason,
+        "handoff_reason_recorded",
     )
 
     if old != s.state:
@@ -4067,7 +4067,7 @@ def update_handoff_workflow(
             "handoff_note_added",
             "handoff",
             h.id,
-            body.note,
+            "counsellor_note_recorded",
         )
 
     log(
