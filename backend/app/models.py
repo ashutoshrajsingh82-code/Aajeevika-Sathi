@@ -113,6 +113,24 @@ class RecommendationEvaluation(Base):
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
     updated_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
 
+
+class AgentEvaluation(Base):
+    __tablename__="agent_evaluations"
+    id:Mapped[int]=mapped_column(primary_key=True)
+    scenario:Mapped[str]=mapped_column(String)
+    category:Mapped[str]=mapped_column(String,index=True)
+    expected_behavior:Mapped[str]=mapped_column(String)
+    tool_allowlist_enforced:Mapped[bool]=mapped_column(Boolean,default=False)
+    authorization_enforced:Mapped[bool]=mapped_column(Boolean,default=False)
+    missing_data_handled:Mapped[bool]=mapped_column(Boolean,default=False)
+    escalation_triggered:Mapped[bool]=mapped_column(Boolean,default=False)
+    loop_prevented:Mapped[bool]=mapped_column(Boolean,default=False)
+    safe_outcome:Mapped[bool]=mapped_column(Boolean,default=False)
+    evaluator_username:Mapped[str]=mapped_column(String,index=True)
+    note:Mapped[str]=mapped_column(Text,default="")
+    created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
+    updated_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
+
 class Handoff(Base):
     __tablename__="handoffs"
     id:Mapped[int]=mapped_column(primary_key=True)
