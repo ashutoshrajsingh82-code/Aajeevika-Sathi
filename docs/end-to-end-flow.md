@@ -46,6 +46,10 @@ Counsellor and admin pages require sign-in. Staff routes use role checks; the br
 
 Create production staff users after migrations with `python -m app.manage_users add-user --role admin --username "your-admin-name"` and repeat with `--role counsellor`. Under Compose, prefix the command with `docker compose exec api`. The CLI prompts for passwords without echo and requires 12 or more characters. To rotate or disable users, use `set-password` or `disable-user` with `--username "your-user-name"`.
 
+## Automated E2E coverage
+
+Phase 10D includes a full backend lifecycle test in `backend/tests/test_phase_10d_complete_e2e.py`. It exercises consent, text and browser-voice interview input, profile validation, persisted recommendation and semantic matching, persisted RAG knowledge retrieval, pathway selection, the controlled livelihood agent, training-centre and scheme evidence in the action plan, counsellor handoff and assignment, follow-up completion, counsellor-verified outcome recording, and admin analytics. The test uses isolated persisted records and cleans them up after execution.
+
 ## Manual check
 
 Run the backend from `backend` using `uvicorn app.main:app --reload --port 8000`, then run the frontend from `frontend` using `npm run dev`. Open `/beneficiary`, consent, answer each prompt (use the microphone or text), confirm the profile, inspect recommendations, select one, then open `/counsellor`. Accept the task, record an outcome, and check `/admin`. All saved actions use the backend API.
