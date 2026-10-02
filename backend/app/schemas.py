@@ -82,6 +82,25 @@ class OutcomeVerification(BaseModel):
     note: str = Field(min_length=3, max_length=1000)
 
 
+
+class CounsellorOutcomeEvaluationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    category: Literal[
+        "handoff_quality",
+        "followup_quality",
+        "outcome_verification",
+        "data_quality",
+    ]
+    expected_behavior: str = Field(min_length=1, max_length=120)
+    handoff_reviewed: bool = False
+    followup_completed: bool = False
+    outcome_verified: bool = False
+    evidence_sufficient: bool = False
+    correction_required: bool = False
+    safe_outcome: bool = False
+    note: str = Field(default="", max_length=1000)
+
 class HandoffCreate(BaseModel):
     session_id: str
     reason: str = Field(min_length=3, max_length=300)
