@@ -93,6 +93,8 @@ from .config import (
     AUTO_CREATE_SCHEMA,
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_HOURS,
+    AUTH_REFRESH_COOKIE_NAME,
+    AUTH_REFRESH_COOKIE_HOURS,
     AUTH_COOKIE_SECURE,
     LOGIN_RATE_LIMIT,
     LOGIN_RATE_WINDOW_SECONDS,
@@ -101,6 +103,8 @@ from .config import (
 from .security import (
     authenticate,
     issue_token,
+    issue_refresh_token,
+    verify_refresh_token,
     current_staff,
     require_roles,
     ensure_demo_accounts,
@@ -478,11 +482,47 @@ def login(
         samesite="strict",
         path="/",
     )
+    response.set_cookie(
+        AUTH_REFRESH_COOKIE_NAME,
+        issue_refresh_token(user),
+        max_age=AUTH_REFRESH_COOKIE_HOURS * 3600,
+        httponly=True,
+        secure=AUTH_COOKIE_SECURE,
+        samesite="strict",
+        path="/api/v1/auth",
+    )
 
     return {
         "username": user.username,
         "role": user.role,
     }
+
+
+@app.post("/api/v1/auth/refresh")
+def refresh_auth(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    token = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)
+    if not token:
+        raise HTTPException(401, "Refresh session is required")
+
+    staff = verify_refresh_token(token, db)
+    user = db.get(AuthUser, staff["user_id"])
+    if not user:
+        raise HTTPException(401, "Refresh session is invalid")
+
+    response.set_cookie(
+        AUTH_COOKIE_NAME,
+        issue_token(user),
+        max_age=AUTH_COOKIE_HOURS * 3600,
+        httponly=True,
+        secure=AUTH_COOKIE_SECURE,
+        samesite="strict",
+        path="/",
+    )
+    return {"username": user.username, "role": user.role, "refreshed": True}
 
 
 @app.get("/api/v1/auth/me")
@@ -497,6 +537,13 @@ def logout(response: Response):
     response.delete_cookie(
         AUTH_COOKIE_NAME,
         path="/",
+        httponly=True,
+        secure=AUTH_COOKIE_SECURE,
+        samesite="strict",
+    )
+    response.delete_cookie(
+        AUTH_REFRESH_COOKIE_NAME,
+        path="/api/v1/auth",
         httponly=True,
         secure=AUTH_COOKIE_SECURE,
         samesite="strict",
