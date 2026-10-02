@@ -208,7 +208,9 @@ def ai_observability(
     latencies = sorted(float(row.latency_ms) for row in provider)
     p95_index = max(0, min(len(latencies) - 1, int((len(latencies) - 1) * 0.95))) if latencies else None
     llm_failures = sum(row.outcome in {"provider_error", "timeout", "unavailable"} for row in provider)
-    retrieval_failures = sum(row.outcome == "retrieval_error" for row in retrieval)\n    json_validation_failures = sum(\n        row.validation_failure and row.outcome in {"invalid_json", "schema_invalid"}
+    retrieval_failures = sum(row.outcome == "retrieval_error" for row in retrieval)
+    json_validation_failures = sum(
+        row.validation_failure and row.outcome in {"invalid_json", "schema_invalid"}
         for row in validation
     )
 
