@@ -18,6 +18,9 @@ from .models import (
     Handoff,
     FollowUp,
     Outcome,
+    AIOperationMetric,
+    AuditLog,
+    LivelihoodAgentSession,
 )
 from .security import require_roles
 
