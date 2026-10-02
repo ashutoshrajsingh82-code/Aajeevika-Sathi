@@ -43,7 +43,7 @@ class LLMClient(ABC):
         except AIError:
             raise
         finally:
-            record_event(request_id=request_id,session_id=session_id,operation=operation,model=getattr(getattr(self,"settings",None),"model","disabled"),latency_ms=(time.perf_counter()-start)*1000,outcome=outcome,validation_failure=validation_failure,prompt_tokens=usage.get("prompt_tokens"),completion_tokens=usage.get("completion_tokens"))
+            record_event(request_id=request_id,session_id=session_id,operation=operation,model=getattr(getattr(self,"settings",None),"model","disabled"),latency_ms=(time.perf_counter()-start)*1000,outcome=outcome,validation_failure=validation_failure,prompt_tokens=usage.get("prompt_tokens"),completion_tokens=usage.get("completion_tokens",event_kind="structured_validation"))
 
 class OpenAICompatibleClient(LLMClient):
     """OpenAI chat-completions-compatible endpoint; works with compatible local servers."""
