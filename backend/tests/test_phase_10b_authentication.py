@@ -99,3 +99,23 @@ def test_phase_10b_auth_version_revokes_refresh_token():
         user.auth_version = original_version
         db.commit()
         db.close()
+
+def test_phase_10b_refresh_rate_limit_returns_429(monkeypatch):
+    from app.main import refresh_rate_limiter
+
+    monkeypatch.setattr(refresh_rate_limiter, "limit", 2)
+    monkeypatch.setattr(refresh_rate_limiter, "window_seconds", 60)
+    refresh_rate_limiter._events.clear()
+
+    isolated = TestClient(app)
+    login = isolated.post(
+        "/api/v1/auth/login",
+        json={"username": DEMO_ADMIN_USERNAME, "password": DEMO_ADMIN_PASSWORD},
+    )
+    assert login.status_code == 200
+
+    assert isolated.post("/api/v1/auth/refresh").status_code == 200
+    assert isolated.post("/api/v1/auth/refresh").status_code == 200
+    limited = isolated.post("/api/v1/auth/refresh")
+    assert limited.status_code == 429
+    assert limited.headers["retry-after"] == "60"
