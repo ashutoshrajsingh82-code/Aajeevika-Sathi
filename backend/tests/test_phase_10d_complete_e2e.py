@@ -3,7 +3,12 @@ import uuid
 
 from fastapi.testclient import TestClient
 
-from app.config import (\n    DEMO_ADMIN_PASSWORD,\n    DEMO_ADMIN_USERNAME,\n    DEMO_COUNSELLOR_PASSWORD,\n    DEMO_COUNSELLOR_USERNAME,\n)
+from app.config import (
+    DEMO_ADMIN_PASSWORD,
+    DEMO_ADMIN_USERNAME,
+    DEMO_COUNSELLOR_PASSWORD,
+    DEMO_COUNSELLOR_USERNAME,
+)
 from app.db import SessionLocal
 from app.main import app
 from app.models import (
