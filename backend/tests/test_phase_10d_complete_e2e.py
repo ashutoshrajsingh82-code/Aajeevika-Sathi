@@ -90,7 +90,7 @@ def test_phase_10d_complete_beneficiary_lifecycle():
             json={"language": "en"},
         )
         assert created.status_code == 200
-        session_id = created.json()["id"]
+        session_id = created.json()["session_id"]
         assert created.json()["state"] == "CONSENT"
 
         consent = client.post(
