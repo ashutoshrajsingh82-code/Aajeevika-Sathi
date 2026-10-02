@@ -317,7 +317,7 @@ def test_phase_10d_complete_beneficiary_lifecycle():
             },
         )
         assert outcome.status_code == 200, outcome.text
-        assert outcome.json()["outcome"]["category"] == "JOB_FOUND"
+        assert outcome.json()["outcome"]["outcome"] == "JOB_FOUND"
 
         # 18. Analytics surface remains available to admin after the lifecycle.
         analytics = admin.get("/api/v1/admin/analytics")
