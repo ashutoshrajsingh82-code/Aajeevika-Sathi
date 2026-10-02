@@ -72,9 +72,11 @@ Copy `.env.example` to `.env` for local overrides. Defaults work without API key
 | `DEMO_MODE` | Labels API as demo (default true) |
 | `FRONTEND_ORIGIN` | FastAPI CORS origin |
 | `NEXT_PUBLIC_API_URL` | Browser-visible API base URL, default `http://localhost:8000` |
-| `OPENAI_API_KEY` | Reserved; no LLM call is currently made |
-| `BHASHINI_API_KEY`, `BHASHINI_API_URL` | Reserved adapter configuration; endpoint-specific integration remains to be implemented |
-| `JWT_SECRET` | Reserved for production authentication; current role views are demo-only |
+| `OPENAI_API_KEY` | Reserved provider configuration; actual LLM use depends on the configured AI provider |
+| `BHASHINI_API_KEY`, `BHASHINI_API_URL` | Reserved adapter configuration; live Bhashini integration remains to be completed |
+| `AUTH_SECRET` | Signing secret for the HTTP-only staff auth cookie; required and validated in non-demo mode |
+| `AUTH_COOKIE_SECURE` | Secure-cookie flag; required true outside demo mode |
+| `LOGIN_RATE_LIMIT`, `LOGIN_RATE_WINDOW_SECONDS` | Process-local login abuse limit; shared infrastructure is needed for multi-instance production |
 
 ## Repository
 
@@ -101,4 +103,6 @@ See [architecture](docs/architecture.md), [AI safety](docs/ai-safety.md), [priva
 
 ## Limitations before real use
 
-Production JWT authentication and role authorization, privacy/security assessment, retention enforcement, deployment hardening, verified catalogue and district data, and live Bhashini integration are not implemented. No real user data should be entered. See documentation for details.
+Signed HTTP-only cookie authentication, staff role authorization, password hashing, token expiry, auth-version revocation, and login rate limiting are implemented and covered by backend tests. These controls are not a substitute for a production security assessment or deployment hardening. The current login limiter is process-local and protects the login endpoint only; multi-worker or multi-instance deployments need shared rate-limit state or an API gateway.
+
+Verified government catalogue/district data, live Bhashini integration, real employment-outcome integration, retention enforcement, frontend automated tests/E2E coverage, and a production security/privacy assessment remain outstanding. No real beneficiary data should be entered into the demo. The repository does not claim production readiness solely from the automated test suite.
