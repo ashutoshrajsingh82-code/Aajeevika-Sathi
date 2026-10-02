@@ -323,10 +323,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        FRONTEND_ORIGIN,
-        "http://localhost:3000",
-    ],
+    allow_origins=([FRONTEND_ORIGIN, "http://localhost:3000"] if DEMO_MODE else [FRONTEND_ORIGIN]),
     allow_credentials=True,
     allow_methods=[
         "GET",
@@ -5609,3 +5606,4 @@ def withdraw(
     return {
         "deleted": True
     }
+

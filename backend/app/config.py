@@ -15,6 +15,8 @@ DEMO_ADMIN_PASSWORD=os.getenv("DEMO_ADMIN_PASSWORD","admin-demo-change-me")
 DEMO_COUNSELLOR_USERNAME=os.getenv("DEMO_COUNSELLOR_USERNAME","counsellor")
 DEMO_COUNSELLOR_PASSWORD=os.getenv("DEMO_COUNSELLOR_PASSWORD","counsellor-demo-change-me")
 if not DEMO_MODE:
+    if AUTO_CREATE_SCHEMA:
+        raise RuntimeError("AUTO_CREATE_SCHEMA must be false in production")
     if DATABASE_URL.startswith("sqlite"):
         raise RuntimeError("Production mode requires a non-SQLite DATABASE_URL")
     if not FRONTEND_ORIGIN.startswith("https://"):
