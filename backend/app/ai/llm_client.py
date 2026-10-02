@@ -43,7 +43,7 @@ class LLMClient(ABC):
         except AIError:
             raise
         finally:
-            record_event(request_id=request_id,session_id=session_id,operation=operation,model=getattr(getattr(self,"settings",None),"model","disabled"),latency_ms=(time.perf_counter()-start)*1000,outcome=outcome,validation_failure=validation_failure,prompt_tokens=usage.get("prompt_tokens"),completion_tokens=usage.get("completion_tokens",event_kind="structured_validation"))
+            record_event(request_id=request_id,session_id=session_id,operation=operation,model=getattr(getattr(self,"settings",None),"model","disabled"),latency_ms=(time.perf_counter()-start)*1000,outcome=outcome,validation_failure=validation_failure,prompt_tokens=usage.get("prompt_tokens"),completion_tokens=usage.get("completion_tokens"),event_kind="structured_validation")
 
 class OpenAICompatibleClient(LLMClient):
     """OpenAI chat-completions-compatible endpoint; works with compatible local servers."""
@@ -76,7 +76,7 @@ class OpenAICompatibleClient(LLMClient):
             outcome="provider_error";raise AIProviderError("AI provider response could not be read") from exc
         finally:
             usage=self.last_usage
-            record_event(request_id=request_id,session_id=session_id,operation=operation,model=self.settings.model,latency_ms=(time.perf_counter()-started)*1000,outcome=outcome,validation_failure=validation_failure,prompt_tokens=usage["prompt_tokens"],completion_tokens=usage["completion_tokens"])
+            record_event(request_id=request_id,session_id=session_id,operation=operation,model=self.settings.model,latency_ms=(time.perf_counter()-started)*1000,outcome=outcome,validation_failure=validation_failure,prompt_tokens=usage["prompt_tokens"],completion_tokens=usage["completion_tokens"],event_kind="provider_call")
 
 class DisabledLLMClient(LLMClient):
     def generate(self,prompt:str,*,system:str="",operation:str="generate",session_id:str|None=None)->str:
