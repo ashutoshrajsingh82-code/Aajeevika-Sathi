@@ -199,7 +199,7 @@ def test_phase_10d_complete_beneficiary_lifecycle():
         rag_payload = rag.json()
         assert rag_payload["results"]
         assert any(
-            hit["document_id"] == knowledge_id
+            hit["document"]["document_id"] == knowledge_id
             for hit in rag_payload["results"]
         )
 
