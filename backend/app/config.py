@@ -15,6 +15,10 @@ DEMO_ADMIN_PASSWORD=os.getenv("DEMO_ADMIN_PASSWORD","admin-demo-change-me")
 DEMO_COUNSELLOR_USERNAME=os.getenv("DEMO_COUNSELLOR_USERNAME","counsellor")
 DEMO_COUNSELLOR_PASSWORD=os.getenv("DEMO_COUNSELLOR_PASSWORD","counsellor-demo-change-me")
 if not DEMO_MODE:
+    if DATABASE_URL.startswith("sqlite"):
+        raise RuntimeError("Production mode requires a non-SQLite DATABASE_URL")
+    if not FRONTEND_ORIGIN.startswith("https://"):
+        raise RuntimeError("Production FRONTEND_ORIGIN must use HTTPS")
     if not os.getenv("AUTH_SECRET"):raise RuntimeError("Production auth configuration missing: AUTH_SECRET")
     AUTH_SECRET=os.environ["AUTH_SECRET"]
     if len(AUTH_SECRET)<32:raise RuntimeError("AUTH_SECRET must contain at least 32 characters")
