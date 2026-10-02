@@ -32,6 +32,7 @@ from .models import (
     TrainingCentre,
     DemandSignal,
     RecommendationRecord,
+    RecommendationEvaluation,
     Handoff,
     FollowUp,
     Outcome,
@@ -45,6 +46,7 @@ from .schemas import (
     StartSession,
     Message,
     SelectPathway,
+    RecommendationEvaluationCreate,
     FollowUpCreate,
     FollowUpUpdate,
     OutcomeCreate,
@@ -2601,6 +2603,85 @@ def get_recommendations(
 
 
 # ---------------------------------------------------------------------------
+@app.post("/api/v1/recommendations/{recommendation_id}/evaluate")
+def evaluate_recommendation(
+    recommendation_id: int,
+    body: RecommendationEvaluationCreate,
+    db: Session = Depends(get_db),
+    staff: dict = Depends(staff_required),
+):
+    recommendation = db.get(RecommendationRecord, recommendation_id)
+    if not recommendation:
+        raise HTTPException(404, "Recommendation not found")
+    if not recommendation.selected:
+        raise HTTPException(422, "Only a selected recommendation can be evaluated")
+
+    handoffs = db.query(Handoff).filter(
+        Handoff.session_id == recommendation.session_id
+    ).all()
+    if staff.get("role") != "admin" and not can_access_case(staff, handoffs):
+        raise HTTPException(403, "You are not assigned to this case")
+
+    if body.counsellor_corrected:
+        if not body.corrected_pathway_id:
+            raise HTTPException(422, "corrected_pathway_id is required when counsellor_corrected is true")
+        corrected = db.get(Pathway, body.corrected_pathway_id)
+        if not corrected:
+            raise HTTPException(404, "Corrected pathway not found")
+        if corrected.id == recommendation.pathway_id:
+            raise HTTPException(422, "Corrected pathway must differ from the recommended pathway")
+    elif body.corrected_pathway_id:
+        raise HTTPException(422, "corrected_pathway_id requires counsellor_corrected=true")
+
+    evaluation = db.query(RecommendationEvaluation).filter_by(
+        recommendation_id=recommendation.id
+    ).one_or_none()
+    if not evaluation:
+        evaluation = RecommendationEvaluation(
+            recommendation_id=recommendation.id,
+            session_id=recommendation.session_id,
+            evaluator_username=staff["username"],
+        )
+        db.add(evaluation)
+
+    evaluation.pathway_completed = body.pathway_completed
+    evaluation.counsellor_corrected = body.counsellor_corrected
+    evaluation.pathway_mismatch = body.pathway_mismatch
+    evaluation.corrected_pathway_id = body.corrected_pathway_id
+    evaluation.note = body.note
+
+    log(
+        db,
+        "recommendation_evaluated",
+        "recommendation",
+        recommendation.id,
+        (
+            f"completed:{body.pathway_completed};"
+            f"corrected:{body.counsellor_corrected};"
+            f"mismatch:{body.pathway_mismatch}"
+        ),
+    )
+    db.commit()
+    db.refresh(evaluation)
+
+    return {
+        "recommendation_id": recommendation.id,
+        "session_id": recommendation.session_id,
+        "accepted": bool(recommendation.selected),
+        "evaluation": {
+            "id": evaluation.id,
+            "pathway_completed": evaluation.pathway_completed,
+            "counsellor_corrected": evaluation.counsellor_corrected,
+            "pathway_mismatch": evaluation.pathway_mismatch,
+            "corrected_pathway_id": evaluation.corrected_pathway_id,
+            "note": evaluation.note,
+            "evaluator_username": evaluation.evaluator_username,
+            "created_at": evaluation.created_at.isoformat() if evaluation.created_at else None,
+            "updated_at": evaluation.updated_at.isoformat() if evaluation.updated_at else None,
+        },
+    }
+
+
 # PROFILE
 # ---------------------------------------------------------------------------
 
