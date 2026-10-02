@@ -17,7 +17,6 @@ from app.config import (
 from app.main import app
 from app.db import SessionLocal
 from app.models import AuthUser
-from app.security import issue_token
 
 
 def _decode_payload(token: str) -> tuple[dict, str]:
@@ -71,7 +70,12 @@ def test_phase_9g_invalid_and_tampered_auth_cookies_are_rejected():
 
     assert client.get("/api/v1/admin/analytics/product").status_code == 401
 
-    client.cookies.set(AUTH_COOKIE_NAME, "not-a-valid-token")
+    client.cookies.set(
+        AUTH_COOKIE_NAME,
+        "not-a-valid-token",
+        domain="testserver.local",
+        path="/",
+    )
     assert client.get("/api/v1/admin/analytics/product").status_code == 401
 
     login = client.post(
@@ -83,30 +87,38 @@ def test_phase_9g_invalid_and_tampered_auth_cookies_are_rejected():
     )
     assert login.status_code == 200
 
-    token = client.cookies.get(AUTH_COOKIE_NAME)
+    token = client.cookies.get(
+        AUTH_COOKIE_NAME,
+        domain="testserver.local",
+        path="/",
+    )
     assert token
 
     payload, encoded_payload = _decode_payload(token)
+
     payload["role"] = "counsellor"
+
     forged_payload = base64.urlsafe_b64encode(
         json.dumps(payload, separators=(",", ":")).encode()
     ).decode().rstrip("=")
+
     forged_token = f"{forged_payload}.{token.split('.', 1)[1]}"
 
-    client.cookies.set(AUTH_COOKIE_NAME, forged_token)
+    client.cookies.set(
+        AUTH_COOKIE_NAME,
+        forged_token,
+        domain="testserver.local",
+        path="/",
+    )
+
     assert client.get("/api/v1/admin/analytics/product").status_code == 401
 
-    valid_signature = base64.urlsafe_b64encode(
-        hmac.new(
-            AUTH_SECRET.encode(),
-            encoded_payload.encode(),
-            hashlib.sha256,
-        ).digest()
-    ).decode().rstrip("=")
     expired_payload = payload | {"exp": int(time.time()) - 60}
+
     expired_encoded = base64.urlsafe_b64encode(
         json.dumps(expired_payload, separators=(",", ":")).encode()
     ).decode().rstrip("=")
+
     expired_signature = base64.urlsafe_b64encode(
         hmac.new(
             AUTH_SECRET.encode(),
@@ -115,13 +127,16 @@ def test_phase_9g_invalid_and_tampered_auth_cookies_are_rejected():
         ).digest()
     ).decode().rstrip("=")
 
+    expired_token = f"{expired_encoded}.{expired_signature}"
+
     client.cookies.set(
         AUTH_COOKIE_NAME,
-        f"{expired_encoded}.{expired_signature}",
+        expired_token,
+        domain="testserver.local",
+        path="/",
     )
-    assert client.get("/api/v1/admin/analytics/product").status_code == 401
 
-    assert valid_signature
+    assert client.get("/api/v1/admin/analytics/product").status_code == 401
 
 
 def test_phase_9g_wrong_password_and_inactive_account_are_rejected():
@@ -146,8 +161,12 @@ def test_phase_9g_wrong_password_and_inactive_account_are_rejected():
     assert unknown_user.status_code == 401
 
     db = SessionLocal()
-    user = db.query(AuthUser).filter_by(username=DEMO_COUNSELLOR_USERNAME).one()
+    user = db.query(AuthUser).filter_by(
+        username=DEMO_COUNSELLOR_USERNAME
+    ).one()
+
     original_active = user.active
+
     try:
         user.active = False
         db.commit()
@@ -159,7 +178,9 @@ def test_phase_9g_wrong_password_and_inactive_account_are_rejected():
                 "password": DEMO_COUNSELLOR_PASSWORD,
             },
         )
+
         assert inactive_login.status_code == 401
+
     finally:
         user.active = original_active
         db.commit()
@@ -178,21 +199,41 @@ def test_phase_9g_role_claim_must_match_current_account():
     )
     assert login.status_code == 200
 
-    token = client.cookies.get(AUTH_COOKIE_NAME)
+    token = client.cookies.get(
+        AUTH_COOKIE_NAME,
+        domain="testserver.local",
+        path="/",
+    )
     assert token
 
     payload, _ = _decode_payload(token)
+
     db = SessionLocal()
-    user = db.query(AuthUser).filter_by(username=DEMO_ADMIN_USERNAME).one()
+    user = db.query(AuthUser).filter_by(
+        username=DEMO_ADMIN_USERNAME
+    ).one()
+
+    user_id = user.id
     original_version = user.auth_version
+
     try:
         user.auth_version += 1
         db.commit()
-        client.cookies.set(AUTH_COOKIE_NAME, token)
-        assert client.get("/api/v1/admin/analytics/product").status_code == 401
+
+        client.cookies.set(
+            AUTH_COOKIE_NAME,
+            token,
+            domain="testserver.local",
+            path="/",
+        )
+
+        assert client.get(
+            "/api/v1/admin/analytics/product"
+        ).status_code == 401
+
     finally:
         user.auth_version = original_version
         db.commit()
         db.close()
 
-    assert payload["sub"] == user.id
+    assert payload["sub"] == user_id
