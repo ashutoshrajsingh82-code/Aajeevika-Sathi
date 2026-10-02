@@ -98,6 +98,8 @@ from .config import (
     AUTH_COOKIE_SECURE,
     LOGIN_RATE_LIMIT,
     LOGIN_RATE_WINDOW_SECONDS,
+    REFRESH_RATE_LIMIT,
+    REFRESH_RATE_WINDOW_SECONDS,
 )
 
 from .security import (
@@ -443,6 +445,10 @@ login_rate_limiter = RateLimiter(
     LOGIN_RATE_LIMIT,
     LOGIN_RATE_WINDOW_SECONDS,
 )
+refresh_rate_limiter = RateLimiter(
+    REFRESH_RATE_LIMIT,
+    REFRESH_RATE_WINDOW_SECONDS,
+)
 
 
 @app.post("/api/v1/auth/login")
@@ -504,6 +510,7 @@ def refresh_auth(
     response: Response,
     db: Session = Depends(get_db),
 ):
+    enforce_rate_limit(refresh_rate_limiter, request, bucket="auth-refresh")
     token = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)
     if not token:
         raise HTTPException(401, "Refresh session is required")
