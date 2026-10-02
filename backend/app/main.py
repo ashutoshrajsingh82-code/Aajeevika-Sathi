@@ -94,6 +94,8 @@ from .config import (
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_HOURS,
     AUTH_COOKIE_SECURE,
+    LOGIN_RATE_LIMIT,
+    LOGIN_RATE_WINDOW_SECONDS,
 )
 
 from .security import (
@@ -103,6 +105,7 @@ from .security import (
     require_roles,
     ensure_demo_accounts,
 )
+from .rate_limit import RateLimiter, enforce_rate_limit
 
 from .ai.config import AISettings
 
@@ -432,12 +435,25 @@ def health():
 # AUTHENTICATION
 # ---------------------------------------------------------------------------
 
+login_rate_limiter = RateLimiter(
+    LOGIN_RATE_LIMIT,
+    LOGIN_RATE_WINDOW_SECONDS,
+)
+
+
 @app.post("/api/v1/auth/login")
 def login(
     body: LoginBody,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ):
+    enforce_rate_limit(
+        login_rate_limiter,
+        request,
+        bucket="auth-login",
+    )
+
     user = authenticate(
         db,
         body.username,
@@ -2810,6 +2826,12 @@ def demo_profile(
     body: DemoProfile,
     db: Session = Depends(get_db),
 ):
+    if not DEMO_MODE:
+        raise HTTPException(
+            status_code=404,
+            detail="Demo profile endpoint is disabled outside DEMO_MODE",
+        )
+
     sid = str(uuid.uuid4())
 
     p = body.model_dump()
@@ -5463,11 +5485,33 @@ def withdraw(
             session_id=sid
         ).delete()
 
+        recommendation_ids = [
+            row.id
+            for row in db.query(
+                RecommendationRecord.id
+            ).filter_by(
+                session_id=sid
+            ).all()
+        ]
+
+        if recommendation_ids:
+            db.query(
+                RecommendationEvaluation
+            ).filter(
+                RecommendationEvaluation.recommendation_id.in_(
+                    recommendation_ids
+                )
+            ).delete(
+                synchronize_session=False
+            )
+
         db.query(
             RecommendationRecord
         ).filter_by(
             session_id=sid
-        ).delete()
+        ).delete(
+            synchronize_session=False
+        )
 
         db.query(
             Handoff
