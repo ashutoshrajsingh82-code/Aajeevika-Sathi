@@ -3284,14 +3284,14 @@ def run_livelihood_agent(
             "Beneficiary consent is required before agent planning",
         )
 
-    if not can_access_case(
-        staff,
+    existing_handoffs = (
         db.query(Handoff)
-        .filter_by(
-            session_id=sid
-        )
-        .all(),
-    ):
+        .filter_by(session_id=sid)
+        .all()
+    )
+    # The first agent run may create its own handoff. Once a handoff exists,
+    # counsellors must be assigned to the case; administrators retain access.
+    if existing_handoffs and not can_access_case(staff, existing_handoffs):
         raise HTTPException(
             403,
             "Assign this case before accessing its details",
@@ -3327,6 +3327,63 @@ def run_livelihood_agent(
             422,
             str(exc),
         ) from exc
+
+
+@app.get(
+    "/api/v1/agent/livelihood/{sid}/status"
+)
+def get_livelihood_agent_status(
+    sid: str,
+    db: Session = Depends(get_db),
+    staff: dict = Depends(staff_required),
+):
+    session = session_or_404(db, sid)
+
+    if not session.consent_at:
+        raise HTTPException(
+            403,
+            "Beneficiary consent is required before agent planning",
+        )
+
+    runs = (
+        db.query(LivelihoodAgentSession)
+        .filter_by(beneficiary_session_id=sid)
+        .order_by(LivelihoodAgentSession.updated_at.desc())
+        .all()
+    )
+    handoffs = (
+        db.query(Handoff)
+        .filter_by(session_id=sid)
+        .all()
+    )
+
+    if handoffs and not can_access_case(staff, handoffs):
+        raise HTTPException(
+            403,
+            "Assign this case before accessing its agent status",
+        )
+
+    latest = runs[0] if runs else None
+
+    return {
+        "beneficiary_session_id": sid,
+        "has_run": latest is not None,
+        "agent_session_id": latest.id if latest else None,
+        "status": latest.status if latest else "not_started",
+        "current_goal": latest.current_goal if latest else None,
+        "tools_used": latest.tools_used or [] if latest else [],
+        "final_action": latest.final_action if latest else None,
+        "created_at": (
+            latest.created_at.isoformat()
+            if latest and latest.created_at
+            else None
+        ),
+        "updated_at": (
+            latest.updated_at.isoformat()
+            if latest and latest.updated_at
+            else None
+        ),
+    }
 
 
 @app.get(
