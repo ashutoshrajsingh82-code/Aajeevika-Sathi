@@ -94,6 +94,8 @@ from .config import (
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_HOURS,
     AUTH_COOKIE_SECURE,
+    LOGIN_RATE_LIMIT,
+    LOGIN_RATE_WINDOW_SECONDS,
 )
 
 from .security import (
@@ -103,6 +105,7 @@ from .security import (
     require_roles,
     ensure_demo_accounts,
 )
+from .rate_limit import RateLimiter, enforce_rate_limit
 
 from .ai.config import AISettings
 
@@ -433,11 +436,24 @@ def health():
 # ---------------------------------------------------------------------------
 
 @app.post("/api/v1/auth/login")
+login_rate_limiter = RateLimiter(
+    LOGIN_RATE_LIMIT,
+    LOGIN_RATE_WINDOW_SECONDS,
+)
+
+
 def login(
     body: LoginBody,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ):
+    enforce_rate_limit(
+        login_rate_limiter,
+        request,
+        bucket="auth-login",
+    )
+
     user = authenticate(
         db,
         body.username,
