@@ -15,6 +15,7 @@ from .models import (
     InterviewAnswer,
     InterviewSession,
     RecommendationRecord,
+    RecommendationEvaluation,
     Handoff,
     FollowUp,
     Outcome,
@@ -184,6 +185,60 @@ def product_analytics(
             "outcomes_are_verified_only": True,
             "raw_beneficiary_records_exposed": False,
             "synthetic_demand_data_included": False,
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+
+@router.get("/recommendations")
+def recommendation_analytics(
+    db: Session = Depends(get_db),
+    staff: dict = Depends(admin_required),
+):
+    """Return measured recommendation evaluation metrics."""
+    generated = db.query(RecommendationRecord.id).count()
+    accepted = db.query(RecommendationRecord.id).filter(
+        RecommendationRecord.selected.is_(True)
+    ).count()
+    evaluated = db.query(RecommendationEvaluation.id).count()
+    completed = db.query(RecommendationEvaluation.id).filter(
+        RecommendationEvaluation.pathway_completed.is_(True)
+    ).count()
+    corrected = db.query(RecommendationEvaluation.id).filter(
+        RecommendationEvaluation.counsellor_corrected.is_(True)
+    ).count()
+    mismatched = db.query(RecommendationEvaluation.id).filter(
+        RecommendationEvaluation.pathway_mismatch.is_(True)
+    ).count()
+
+    return {
+        "metrics": {
+            "recommendations_generated": generated,
+            "recommendations_accepted": accepted,
+            "recommendation_acceptance_rate": round(accepted / generated, 4) if generated else None,
+            "recommendations_evaluated": evaluated,
+            "recommendations_unassessed": max(0, accepted - evaluated),
+            "pathways_completed": completed,
+            "pathway_completion_rate": round(completed / accepted, 4) if accepted else None,
+            "counsellor_corrections": corrected,
+            "counsellor_correction_rate": round(corrected / evaluated, 4) if evaluated else None,
+            "pathway_mismatches": mismatched,
+            "pathway_mismatch_rate": round(mismatched / evaluated, 4) if evaluated else None,
+        },
+        "definitions": {
+            "recommendations_generated": "Persisted recommendation records.",
+            "recommendations_accepted": "Recommendation records explicitly selected through the pathway-selection workflow.",
+            "recommendations_evaluated": "Recommendation records with an explicit counsellor evaluation.",
+            "recommendations_unassessed": "Accepted recommendations without an explicit evaluation record.",
+            "pathways_completed": "Evaluations explicitly marked pathway_completed by authorised staff.",
+            "counsellor_corrections": "Evaluations explicitly marked counsellor_corrected.",
+            "pathway_mismatches": "Evaluations explicitly marked pathway_mismatch.",
+            "accuracy_claim": "Not measured; these are operational evaluation signals, not model accuracy.",
+        },
+        "data_quality": {
+            "ground_truth_accuracy_measured": False,
+            "raw_beneficiary_records_exposed": False,
         },
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
