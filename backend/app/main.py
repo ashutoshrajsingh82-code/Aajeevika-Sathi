@@ -144,6 +144,7 @@ from .ai.agents.livelihood import LivelihoodAgentService
 from .ai.agents.livelihood_schemas import AgentRunRequest
 
 from .product_analytics import router as product_analytics_router
+from .rag_evaluation import router as rag_evaluation_router
 
 
 # ---------------------------------------------------------------------------
@@ -327,6 +328,7 @@ app.add_middleware(
 
 
 app.include_router(product_analytics_router)
+app.include_router(rag_evaluation_router)
 
 
 staff_required = require_roles("admin", "counsellor")

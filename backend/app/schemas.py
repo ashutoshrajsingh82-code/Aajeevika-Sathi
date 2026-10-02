@@ -277,3 +277,24 @@ class ProfileEvidenceUpdate(BaseModel):
         pattern="^(confirm|correct|remove)$"
     )
     value: Any = None
+
+
+class RAGEvaluationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1, max_length=2000)
+    category: Literal[
+        "eligibility",
+        "courses",
+        "centres",
+        "districts",
+        "unknown",
+        "outdated_documents",
+    ]
+    expected_behavior: str = Field(min_length=1, max_length=120)
+    retrieved_count: int = Field(default=0, ge=0, le=1000)
+    retrieval_success: bool = False
+    answer_supported: bool = False
+    unknown_handled: bool = False
+    outdated_document_detected: bool = False
+    note: str = Field(default="", max_length=1000)
