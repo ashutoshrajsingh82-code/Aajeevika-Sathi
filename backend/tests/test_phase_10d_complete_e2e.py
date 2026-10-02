@@ -184,7 +184,7 @@ def test_phase_10d_complete_beneficiary_lifecycle():
             },
         )
         assert document.status_code == 200, document.text
-        knowledge_id = document.json()["document"]["id"]
+        knowledge_id = document.json()["document_id"]
 
         rag = client.post(
             "/api/v1/knowledge/search",
