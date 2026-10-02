@@ -201,12 +201,14 @@ def ai_observability(
     validation = db.query(AIOperationMetric).filter(
         AIOperationMetric.event_kind == "structured_validation"
     ).all()
+    retrieval = db.query(AIOperationMetric).filter(
+        AIOperationMetric.event_kind == "retrieval"
+    ).all()
 
     latencies = sorted(float(row.latency_ms) for row in provider)
     p95_index = max(0, min(len(latencies) - 1, int((len(latencies) - 1) * 0.95))) if latencies else None
     llm_failures = sum(row.outcome in {"provider_error", "timeout", "unavailable"} for row in provider)
-    json_validation_failures = sum(
-        row.validation_failure and row.outcome in {"invalid_json", "schema_invalid"}
+    retrieval_failures = sum(row.outcome == "retrieval_error" for row in retrieval)\n    json_validation_failures = sum(\n        row.validation_failure and row.outcome in {"invalid_json", "schema_invalid"}
         for row in validation
     )
 
@@ -237,6 +239,9 @@ def ai_observability(
                 "mean": round(sum(latencies) / len(latencies), 2) if latencies else None,
                 "p95": round(latencies[p95_index], 2) if p95_index is not None else None,
             },
+            "retrieval_operations": len(retrieval),
+            "retrieval_failures": retrieval_failures,
+            "retrieval_failure_rate": round(retrieval_failures / len(retrieval), 4) if retrieval else None,
             "json_validation_failures": json_validation_failures,
             "json_validation_failure_rate": round(json_validation_failures / len(validation), 4) if validation else None,
             "tool_failures": tool_failed,
@@ -248,6 +253,8 @@ def ai_observability(
         "definitions": {
             "llm_operations": "Persisted provider-call observations.",
             "llm_failures": "Provider timeout, provider error, or unavailable outcomes.",
+            "retrieval_operations": "Persisted RAG retrieval observations.",
+            "retrieval_failures": "RAG retriever exceptions; no-result retrievals are not failures.",
             "json_validation_failures": "Structured AI responses rejected as invalid JSON or schema-invalid.",
             "tool_failures": "Allowlisted livelihood-tool executions recorded as failed.",
             "agent_completion_rate": "Terminal livelihood-agent runs divided by all persisted agent runs.",
@@ -256,7 +263,7 @@ def ai_observability(
         },
         "coverage": {
             "prompts_and_raw_answers_stored": False,
-            "retrieval_failure_events": "not yet instrumented",
+            "retrieval_failure_events": "persisted",
             "tool_failures": "derived from bounded audit logs",
             "agent_metrics": "derived from persisted agent sessions",
         },
