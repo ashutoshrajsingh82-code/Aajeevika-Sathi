@@ -278,3 +278,20 @@ class AIOperationMetric(Base):
     prompt_tokens:Mapped[int|None]=mapped_column(Integer,nullable=True)
     completion_tokens:Mapped[int|None]=mapped_column(Integer,nullable=True)
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,index=True)
+
+
+class RAGEvaluation(Base):
+    __tablename__="rag_evaluations"
+    id:Mapped[int]=mapped_column(primary_key=True)
+    query:Mapped[str]=mapped_column(Text)
+    category:Mapped[str]=mapped_column(String,index=True)
+    expected_behavior:Mapped[str]=mapped_column(String)
+    retrieved_count:Mapped[int]=mapped_column(Integer,default=0)
+    retrieval_success:Mapped[bool]=mapped_column(Boolean,default=False)
+    answer_supported:Mapped[bool]=mapped_column(Boolean,default=False)
+    unknown_handled:Mapped[bool]=mapped_column(Boolean,default=False)
+    outdated_document_detected:Mapped[bool]=mapped_column(Boolean,default=False)
+    evaluator_username:Mapped[str]=mapped_column(String,index=True)
+    note:Mapped[str]=mapped_column(Text,default="")
+    created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
+    updated_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
