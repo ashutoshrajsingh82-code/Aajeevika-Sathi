@@ -93,6 +93,7 @@ def counsellor_outcome_analytics(
         "outcome_verification_rate": _rate(counts["outcome_verified"], total),
         "evidence_sufficiency_rate": _rate(counts["evidence_sufficient"], total),
         "correction_rate": _rate(counts["correction_required"], total),
+        "safe_outcomes": counts["safe_outcome"],
         "safe_outcome_rate": _rate(counts["safe_outcome"], total),
         "category_breakdown": categories,
         "definitions": {
