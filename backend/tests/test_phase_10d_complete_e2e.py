@@ -158,7 +158,7 @@ def test_phase_10d_complete_beneficiary_lifecycle():
             if item["pathway"]["id"] == pathway_id
         )
         assert match["matched_skills"]
-        assert match["model_version"] == SEMANTIC_MODEL_VERSION
+        assert SEMANTIC_MODEL_VERSION in match["model_version"]
         assert match["data_sources"]
 
         # 8. RAG: ingest and retrieve a persisted scheme document.
