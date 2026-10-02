@@ -99,7 +99,7 @@ def test_phase_10d_complete_beneficiary_lifecycle():
         )
         assert consent.status_code == 200
         assert consent.json()["state"] == "INTERVIEW"
-        assert consent.json()["consent_status"] is True
+        assert consent.json()["consent"] is True
 
         # 2-3. Voice + text are both routed through the canonical interview API.
         answers = {
