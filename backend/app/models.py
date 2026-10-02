@@ -131,6 +131,23 @@ class AgentEvaluation(Base):
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
     updated_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
 
+
+class CounsellorOutcomeEvaluation(Base):
+    __tablename__="counsellor_outcome_evaluations"
+    id:Mapped[int]=mapped_column(primary_key=True)
+    category:Mapped[str]=mapped_column(String,index=True)
+    expected_behavior:Mapped[str]=mapped_column(String)
+    handoff_reviewed:Mapped[bool]=mapped_column(Boolean,default=False)
+    followup_completed:Mapped[bool]=mapped_column(Boolean,default=False)
+    outcome_verified:Mapped[bool]=mapped_column(Boolean,default=False)
+    evidence_sufficient:Mapped[bool]=mapped_column(Boolean,default=False)
+    correction_required:Mapped[bool]=mapped_column(Boolean,default=False)
+    safe_outcome:Mapped[bool]=mapped_column(Boolean,default=False)
+    evaluator_username:Mapped[str]=mapped_column(String,index=True)
+    note:Mapped[str]=mapped_column(Text,default="")
+    created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
+    updated_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
+
 class Handoff(Base):
     __tablename__="handoffs"
     id:Mapped[int]=mapped_column(primary_key=True)
