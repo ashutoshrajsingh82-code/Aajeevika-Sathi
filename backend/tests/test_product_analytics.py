@@ -58,6 +58,10 @@ def test_phase_9a_product_analytics_measures_persisted_workflow_data():
                 )
             )
 
+        # SQLite foreign-key enforcement is enabled in Phase 10A. Persist the
+        # parent sessions before inserting rows that reference them.
+        db.commit()
+
         db.add_all(
             [
                 InterviewAnswer(
@@ -144,6 +148,8 @@ def test_phase_9a_product_analytics_measures_persisted_workflow_data():
             "synthetic_demand_data_included": False,
         }
     finally:
+        # A failed flush leaves the SQLAlchemy transaction inactive.
+        db.rollback()
         for sid in session_ids:
             db.query(InterviewAnswer).filter_by(session_id=sid).delete()
             db.query(RecommendationRecord).filter_by(session_id=sid).delete()

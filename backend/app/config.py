@@ -26,3 +26,6 @@ def _followup_days():
     if not days or any(day<1 or day>730 for day in days):raise RuntimeError("FOLLOWUP_INTERVAL_DAYS values must be between 1 and 730 days")
     return days
 FOLLOWUP_INTERVAL_DAYS=_followup_days()
+
+LOGIN_RATE_LIMIT=int(os.getenv("LOGIN_RATE_LIMIT","10"))
+LOGIN_RATE_WINDOW_SECONDS=int(os.getenv("LOGIN_RATE_WINDOW_SECONDS","60"))
