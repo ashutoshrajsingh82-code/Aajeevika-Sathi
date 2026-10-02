@@ -435,13 +435,13 @@ def health():
 # AUTHENTICATION
 # ---------------------------------------------------------------------------
 
-@app.post("/api/v1/auth/login")
 login_rate_limiter = RateLimiter(
     LOGIN_RATE_LIMIT,
     LOGIN_RATE_WINDOW_SECONDS,
 )
 
 
+@app.post("/api/v1/auth/login")
 def login(
     body: LoginBody,
     request: Request,
