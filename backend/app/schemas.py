@@ -279,6 +279,27 @@ class ProfileEvidenceUpdate(BaseModel):
     value: Any = None
 
 
+
+class AgentEvaluationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    scenario: str = Field(min_length=1, max_length=200)
+    category: Literal[
+        "tool_allowlist",
+        "authorization",
+        "missing_data",
+        "escalation",
+        "loop_prevention",
+    ]
+    expected_behavior: str = Field(min_length=1, max_length=120)
+    tool_allowlist_enforced: bool = False
+    authorization_enforced: bool = False
+    missing_data_handled: bool = False
+    escalation_triggered: bool = False
+    loop_prevented: bool = False
+    safe_outcome: bool = False
+    note: str = Field(default="", max_length=1000)
+
 class RAGEvaluationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
