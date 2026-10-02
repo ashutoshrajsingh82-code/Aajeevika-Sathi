@@ -3291,7 +3291,15 @@ def run_livelihood_agent(
     )
     # The first agent run may create its own handoff. Once a handoff exists,
     # counsellors must be assigned to the case; administrators retain access.
-    if existing_handoffs and not can_access_case(staff, existing_handoffs):
+    # An OPEN, unassigned handoff is created when a pathway is selected.
+    # It must not block the initial agent run; access restrictions apply
+    # once a counsellor has actually been assigned to the case.
+    assigned_handoffs = [
+        handoff
+        for handoff in existing_handoffs
+        if handoff.assigned_to
+    ]
+    if assigned_handoffs and not can_access_case(staff, assigned_handoffs):
         raise HTTPException(
             403,
             "Assign this case before accessing its details",
