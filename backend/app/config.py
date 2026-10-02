@@ -31,6 +31,8 @@ FOLLOWUP_INTERVAL_DAYS=_followup_days()
 
 LOGIN_RATE_LIMIT=int(os.getenv("LOGIN_RATE_LIMIT","10"))
 LOGIN_RATE_WINDOW_SECONDS=int(os.getenv("LOGIN_RATE_WINDOW_SECONDS","60"))
+REFRESH_RATE_LIMIT=int(os.getenv("REFRESH_RATE_LIMIT","20"))
+REFRESH_RATE_WINDOW_SECONDS=int(os.getenv("REFRESH_RATE_WINDOW_SECONDS","60"))
 
 if AUTH_COOKIE_HOURS < 1 or AUTH_COOKIE_HOURS > 24:
     raise RuntimeError("AUTH_COOKIE_HOURS must be between 1 and 24")
@@ -38,3 +40,5 @@ if AUTH_REFRESH_COOKIE_HOURS < 1 or AUTH_REFRESH_COOKIE_HOURS > 720:
     raise RuntimeError("AUTH_REFRESH_COOKIE_HOURS must be between 1 and 720")
 if LOGIN_RATE_LIMIT < 1 or LOGIN_RATE_WINDOW_SECONDS < 1:
     raise RuntimeError("Login rate-limit settings must be positive")
+if REFRESH_RATE_LIMIT < 1 or REFRESH_RATE_WINDOW_SECONDS < 1:
+    raise RuntimeError("Refresh rate-limit settings must be positive")
