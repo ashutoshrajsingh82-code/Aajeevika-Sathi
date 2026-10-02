@@ -62,7 +62,7 @@ from .schemas import (
     ProfileEvidenceUpdate,
 )
 
-from .dialogue import transition, first_slot, question, SLOTS
+from .dialogue import transition, first_slot, question, SLOTS, is_yes
 from .recommender import recommend
 from .planning import action_plan
 
@@ -1637,15 +1637,7 @@ def message(
 
     if (
         old == "PROFILE_REVIEW"
-        and body.text.strip().lower()
-        in {
-            "yes",
-            "y",
-            "हाँ",
-            "हां",
-            "हो",
-            "correct",
-        }
+        and is_yes(body.text)
     ):
         pending = (
             db.query(ProfileEvidence)
@@ -5679,4 +5671,3 @@ def withdraw(
     return {
         "deleted": True
     }
-

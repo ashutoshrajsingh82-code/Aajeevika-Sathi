@@ -37,6 +37,12 @@ def normalize(slot,text):
         return [x.strip() for x in re.split(r",| and | तथा | और |\n",t) if x.strip()]
     return t
 
+
+YES_WORDS={"yes","y","yeah","yep","ok","okay","correct","right","हाँ","हां","हो","सही","ठीक"}
+def is_yes(text):
+    t=re.sub(r"[.,!?;:।\"'()\-]","",(text or "").lower()).strip()
+    return t in YES_WORDS or t.startswith("yes ") or t.startswith("हाँ ") or t.startswith("हां ")
+
 def transition(session,text):
     profile=dict(session.profile or {})
     if session.state=="CONSENT":
@@ -44,7 +50,7 @@ def transition(session,text):
             return "CONSENT",profile,"Please choose yes to consent, or leave the assessment. / सहमति के लिए हाँ कहें।"
         return "INTERVIEW",profile,question(first_slot(profile),session.language)
     if session.state=="PROFILE_REVIEW":
-        if text.strip().lower() in {"yes","y","हाँ","हां","हो","correct"}:
+        if is_yes(text):
             return "RECOMMENDATION",profile,("Your profile is ready. I’ll show pathways from the demo catalogue." if session.language=="en" else "आपकी जानकारी तैयार है। अब नमूना आजीविका विकल्प दिखाता हूँ।")
         return "PROFILE_REVIEW",profile,("You can correct or remove details in your profile below, then confirm when it looks right." if session.language=="en" else "नीचे अपनी जानकारी सुधारें या हटाएँ, फिर सही होने पर पुष्टि करें।")
     slot=first_slot(profile)
