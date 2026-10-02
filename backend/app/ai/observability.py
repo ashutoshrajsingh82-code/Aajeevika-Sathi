@@ -1,8 +1,8 @@
 """Privacy-safe structured operational metrics for AI calls."""
 import json
 import logging
-from .db import SessionLocal
-from .models import AIOperationMetric
+from ..db import SessionLocal
+from ..models import AIOperationMetric
 
 logger=logging.getLogger("aajeevika.ai")
 
