@@ -237,3 +237,4 @@ def test_phase_9g_role_claim_must_match_current_account():
         db.close()
 
     assert payload["sub"] == user_id
+
