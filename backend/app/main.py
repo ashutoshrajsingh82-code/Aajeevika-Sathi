@@ -2810,6 +2810,12 @@ def demo_profile(
     body: DemoProfile,
     db: Session = Depends(get_db),
 ):
+    if not DEMO_MODE:
+        raise HTTPException(
+            status_code=404,
+            detail="Demo profile endpoint is disabled outside DEMO_MODE",
+        )
+
     sid = str(uuid.uuid4())
 
     p = body.model_dump()
@@ -5463,11 +5469,33 @@ def withdraw(
             session_id=sid
         ).delete()
 
+        recommendation_ids = [
+            row.id
+            for row in db.query(
+                RecommendationRecord.id
+            ).filter_by(
+                session_id=sid
+            ).all()
+        ]
+
+        if recommendation_ids:
+            db.query(
+                RecommendationEvaluation
+            ).filter(
+                RecommendationEvaluation.recommendation_id.in_(
+                    recommendation_ids
+                )
+            ).delete(
+                synchronize_session=False
+            )
+
         db.query(
             RecommendationRecord
         ).filter_by(
             session_id=sid
-        ).delete()
+        ).delete(
+            synchronize_session=False
+        )
 
         db.query(
             Handoff
