@@ -98,6 +98,21 @@ class RecommendationRecord(Base):
     model_version:Mapped[str|None]=mapped_column(String,nullable=True)
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
 
+class RecommendationEvaluation(Base):
+    __tablename__="recommendation_evaluations"
+    __table_args__=(UniqueConstraint("recommendation_id",name="uq_recommendation_evaluation_recommendation"),)
+    id:Mapped[int]=mapped_column(primary_key=True)
+    recommendation_id:Mapped[int]=mapped_column(ForeignKey("recommendations.id",ondelete="CASCADE"),index=True)
+    session_id:Mapped[str]=mapped_column(ForeignKey("sessions.id",ondelete="CASCADE"),index=True)
+    pathway_completed:Mapped[bool]=mapped_column(Boolean,default=False)
+    counsellor_corrected:Mapped[bool]=mapped_column(Boolean,default=False)
+    pathway_mismatch:Mapped[bool]=mapped_column(Boolean,default=False)
+    corrected_pathway_id:Mapped[str|None]=mapped_column(ForeignKey("pathways.id"),nullable=True)
+    note:Mapped[str]=mapped_column(Text,default="")
+    evaluator_username:Mapped[str]=mapped_column(String,index=True)
+    created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
+    updated_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
+
 class Handoff(Base):
     __tablename__="handoffs"
     id:Mapped[int]=mapped_column(primary_key=True)
