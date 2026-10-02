@@ -33,6 +33,7 @@ from .models import (
     DemandSignal,
     RecommendationRecord,
     RecommendationEvaluation,
+    AgentEvaluation,
     Handoff,
     FollowUp,
     Outcome,
@@ -47,6 +48,7 @@ from .schemas import (
     Message,
     SelectPathway,
     RecommendationEvaluationCreate,
+    AgentEvaluationCreate,
     FollowUpCreate,
     FollowUpUpdate,
     OutcomeCreate,
@@ -145,6 +147,7 @@ from .ai.agents.livelihood_schemas import AgentRunRequest
 
 from .product_analytics import router as product_analytics_router
 from .rag_evaluation import router as rag_evaluation_router
+from .agent_evaluation import router as agent_evaluation_router
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +332,7 @@ app.add_middleware(
 
 app.include_router(product_analytics_router)
 app.include_router(rag_evaluation_router)
+app.include_router(agent_evaluation_router)
 
 
 staff_required = require_roles("admin", "counsellor")
