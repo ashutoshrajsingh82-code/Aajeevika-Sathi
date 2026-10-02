@@ -25,9 +25,10 @@ Skipped interview slots are recorded in the profile's `skipped_slots`; required 
 4. After profile confirmation, `POST /api/v1/interview/session/{id}/complete` validates and atomically saves the completion timestamp, recommendation snapshots (including centre match and decision evidence), action plan, case, initial follow-up, and audit event.
 5. `GET /api/v1/case/{id}` returns the saved case, profile state, recommendations, handoffs and follow-ups.
 6. `POST /api/v1/recommendations/select` saves selection and creates a counsellor handoff and follow-up.
-7. Counsellors use `/api/v1/handoff/queue`, `/api/v1/handoff/{id}`, `/api/v1/followups`, and `/api/v1/followups/{id}`. `PATCH /api/v1/case/{id}/outcome` records an outcome.
-8. `/api/v1/admin/analytics` derives funnel and outcome counts from database records and suppresses small groups.
-9. `DELETE /api/v1/interview/session/{id}` removes answers, case, recommendations, handoffs, follow-ups, and session data.
+7. The livelihood agent is an authenticated staff action: `POST /api/v1/agent/livelihood/{id}/run` starts a bounded planning run using only persisted catalogue/knowledge records. `GET /api/v1/agent/livelihood/{id}/status` returns the latest persisted agent run for refresh/polling; `GET /api/v1/agent/livelihood/session/{agent_session_id}` returns the persisted run by ID. The API deliberately does not expose arbitrary tool execution.
+8. Counsellors use `/api/v1/handoff/queue`, `/api/v1/handoff/{id}`, `/api/v1/followups`, and `/api/v1/followups/{id}`. `PATCH /api/v1/case/{id}/outcome` records an outcome.
+9. `/api/v1/admin/analytics` derives funnel and outcome counts from database records and suppresses small groups.
+10. `DELETE /api/v1/interview/session/{id}` removes answers, case, recommendations, handoffs, follow-ups, agent sessions, and session data.
 
 ## Persistence
 
