@@ -213,6 +213,9 @@ def test_phase_10d_complete_beneficiary_lifecycle():
         )
         assert selected.status_code == 200, selected.text
 
+        # Agent execution requires authenticated staff access.
+        login(client, DEMO_COUNSELLOR_USERNAME, DEMO_COUNSELLOR_PASSWORD)
+
         agent = client.post(
             f"/api/v1/agent/livelihood/{session_id}/run",
             json={"goal": "Create a verified livelihood action plan"},
