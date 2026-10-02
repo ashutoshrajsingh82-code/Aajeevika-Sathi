@@ -7,7 +7,13 @@ import secrets
 import time
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from .config import AUTH_COOKIE_NAME, AUTH_COOKIE_HOURS, AUTH_SECRET,DEMO_ADMIN_USERNAME,DEMO_ADMIN_PASSWORD,DEMO_COUNSELLOR_USERNAME,DEMO_COUNSELLOR_PASSWORD
+from .config import (
+    AUTH_COOKIE_NAME, AUTH_COOKIE_HOURS,
+    AUTH_REFRESH_COOKIE_NAME, AUTH_REFRESH_COOKIE_HOURS,
+    AUTH_SECRET,
+    DEMO_ADMIN_USERNAME, DEMO_ADMIN_PASSWORD,
+    DEMO_COUNSELLOR_USERNAME, DEMO_COUNSELLOR_PASSWORD,
+)
 from .db import get_db
 from .models import AuthUser
 
@@ -46,23 +52,39 @@ def ensure_demo_accounts(db:Session)->None:
         elif not verify_password(password,user.password_hash):user.password_hash=hash_password(password);user.auth_version+=1
     db.commit()
 
-def issue_token(user:AuthUser)->str:
-    payload=_b64(json.dumps({"sub":user.id,"role":user.role,"ver":user.auth_version,"exp":int(time.time()+AUTH_COOKIE_HOURS*3600)},separators=(",",":")).encode())
+def _issue_token(user:AuthUser, hours:int, token_type:str)->str:
+    payload=_b64(json.dumps({
+        "sub":user.id,"role":user.role,"ver":user.auth_version,
+        "typ":token_type,"exp":int(time.time()+hours*3600),
+    },separators=(",",":")).encode())
     signature=_b64(hmac.new(AUTH_SECRET.encode(),payload.encode(),hashlib.sha256).digest())
     return f"{payload}.{signature}"
 
-def verify_token(token:str,db:Session)->dict:
+def issue_token(user:AuthUser)->str:
+    return _issue_token(user, AUTH_COOKIE_HOURS, "access")
+
+def issue_refresh_token(user:AuthUser)->str:
+    return _issue_token(user, AUTH_REFRESH_COOKIE_HOURS, "refresh")
+
+def _verify_token(token:str,db:Session,expected_type:str)->dict:
     try:
         payload,signature=token.split(".",1)
         expected=_b64(hmac.new(AUTH_SECRET.encode(),payload.encode(),hashlib.sha256).digest())
-        if not secrets.compare_digest(signature,expected):raise ValueError("signature")
+        if not secrets.compare_digest(signature,expected): raise ValueError("signature")
         data=json.loads(_unb64(payload))
-        if int(data["exp"])<=int(time.time()):raise ValueError("expired")
+        if data.get("typ")!=expected_type: raise ValueError("type")
+        if int(data["exp"])<=int(time.time()): raise ValueError("expired")
         user=db.get(AuthUser,int(data["sub"]))
-        if not user or not user.active or user.role!=data["role"] or user.auth_version!=int(data["ver"]):raise ValueError("account")
-        return {"username":user.username,"role":user.role}
+        if not user or not user.active or user.role!=data["role"] or user.auth_version!=int(data["ver"]): raise ValueError("account")
+        return {"username":user.username,"role":user.role,"user_id":user.id}
     except (ValueError,KeyError,TypeError,json.JSONDecodeError,UnicodeDecodeError):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED,"Sign in to continue",headers={"WWW-Authenticate":"Cookie"})
+
+def verify_token(token:str,db:Session)->dict:
+    return _verify_token(token,db,"access")
+
+def verify_refresh_token(token:str,db:Session)->dict:
+    return _verify_token(token,db,"refresh")
 
 def current_staff(token:str|None=Cookie(default=None,alias=AUTH_COOKIE_NAME),db:Session=Depends(get_db)):
     if not token:raise HTTPException(status.HTTP_401_UNAUTHORIZED,"Sign in to continue")
