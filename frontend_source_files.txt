@@ -1,0 +1,14 @@
+C:\Users\ASHUTOSH\SIH97\frontend\app\layout.js
+C:\Users\ASHUTOSH\SIH97\frontend\app\manifest.js
+C:\Users\ASHUTOSH\SIH97\frontend\app\page.js
+C:\Users\ASHUTOSH\SIH97\frontend\app\admin\page.js
+C:\Users\ASHUTOSH\SIH97\frontend\app\beneficiary\page.js
+C:\Users\ASHUTOSH\SIH97\frontend\app\counsellor\page.js
+C:\Users\ASHUTOSH\SIH97\frontend\app\demo\page.js
+C:\Users\ASHUTOSH\SIH97\frontend\components\AuthGate.js
+C:\Users\ASHUTOSH\SIH97\frontend\components\LivelihoodAgentPanel.js
+C:\Users\ASHUTOSH\SIH97\frontend\components\MapPanel.js
+C:\Users\ASHUTOSH\SIH97\frontend\components\Motion.js
+C:\Users\ASHUTOSH\SIH97\frontend\lib\api.js
+C:\Users\ASHUTOSH\SIH97\frontend\lib\offline.js
+C:\Users\ASHUTOSH\SIH97\frontend\public\sw.js
