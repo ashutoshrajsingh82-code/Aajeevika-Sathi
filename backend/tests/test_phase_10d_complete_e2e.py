@@ -244,10 +244,12 @@ def test_phase_10d_complete_beneficiary_lifecycle():
         assert case.status_code == 200
         case_payload = case.json()
         assert case_payload["case"]["selected_pathway_id"] == pathway_id
-        assert case_payload["action_plan"]
-        assert case_payload["action_plan"]["steps"]
-        assert case_payload["action_plan"]["training_centre"]
-        assert case_payload["action_plan"]["scheme"] is not None
+        assert case_payload["case"]["action_plan"]
+        structured_plan = case_payload["case"]["structured_action_plan"]
+        assert structured_plan
+        assert structured_plan["steps"]
+        assert structured_plan["training_centre"]
+        assert structured_plan["scheme"] is not None
 
         # 14-16. Handoff -> counsellor assignment -> workflow -> follow-up.
         handoff = client.post(
