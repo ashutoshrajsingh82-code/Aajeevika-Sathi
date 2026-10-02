@@ -1,5 +1,5 @@
 """Text ingestion, chunking, portable retrieval and source-aware answers."""
-import hashlib,re,uuid
+import hashlib,re,uuid,time
 from datetime import date,datetime,timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -10,6 +10,7 @@ from .sources import official_url
 from .extractors import ExtractedPage,ocr_status_message
 from .schemas import GroundedAnswer
 from .citations import validate_claims,split_claims
+from ..ai.observability import record_event
 
 CHUNK_SIZE=900
 CHUNK_OVERLAP=120
@@ -168,7 +169,29 @@ class KnowledgeService:
         category=category or classification["category"]
         filters={"category":category,"district":district,"state":state}
         retriever=self.retriever or make_retriever(db,self.embedder)
-        ranked=retriever.retrieve(db,query,top_k=limit,filters=filters)
+        started=time.perf_counter()
+        try:
+            ranked=retriever.retrieve(db,query,top_k=limit,filters=filters)
+        except Exception:
+            record_event(
+                request_id=str(uuid.uuid4()),
+                session_id=None,
+                operation="rag_retrieval",
+                model=self.embedder.model_version,
+                latency_ms=(time.perf_counter()-started)*1000,
+                outcome="retrieval_error",
+                event_kind="retrieval",
+            )
+            raise
+        record_event(
+            request_id=str(uuid.uuid4()),
+            session_id=None,
+            operation="rag_retrieval",
+            model=self.embedder.model_version,
+            latency_ms=(time.perf_counter()-started)*1000,
+            outcome="success" if ranked else "no_results",
+            event_kind="retrieval",
+        )
         results=[self._chunk_view(score,chunk,doc) for score,chunk,doc in ranked]
         results.extend(self._search_demo_catalogue(db,query,category=category,district=district,state=state))
         results.sort(key=lambda item:(item["score"],item["document"].get("last_verified") or "",item["chunk_id"]),reverse=True)

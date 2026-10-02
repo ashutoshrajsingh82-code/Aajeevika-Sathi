@@ -18,6 +18,9 @@ from .models import (
     Handoff,
     FollowUp,
     Outcome,
+    AIOperationMetric,
+    AuditLog,
+    LivelihoodAgentSession,
 )
 from .security import require_roles
 
@@ -181,6 +184,90 @@ def product_analytics(
             "outcomes_are_verified_only": True,
             "raw_beneficiary_records_exposed": False,
             "synthetic_demand_data_included": False,
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/ai")
+def ai_observability(
+    db: Session = Depends(get_db),
+    staff: dict = Depends(admin_required),
+):
+    """Return aggregate AI operational metrics without prompts, answers, or PII."""
+    provider = db.query(AIOperationMetric).filter(
+        AIOperationMetric.event_kind == "provider_call"
+    ).all()
+    validation = db.query(AIOperationMetric).filter(
+        AIOperationMetric.event_kind == "structured_validation"
+    ).all()
+    retrieval = db.query(AIOperationMetric).filter(
+        AIOperationMetric.event_kind == "retrieval"
+    ).all()
+
+    latencies = sorted(float(row.latency_ms) for row in provider)
+    p95_index = max(0, min(len(latencies) - 1, int((len(latencies) - 1) * 0.95))) if latencies else None
+    llm_failures = sum(row.outcome in {"provider_error", "timeout", "unavailable"} for row in provider)
+    retrieval_failures = sum(row.outcome == "retrieval_error" for row in retrieval)
+    json_validation_failures = sum(
+        row.validation_failure and row.outcome in {"invalid_json", "schema_invalid"}
+        for row in validation
+    )
+
+    tool_failed = db.query(AuditLog).filter(
+        AuditLog.action == "livelihood_agent_tool",
+        AuditLog.detail.like("%outcome:failed%"),
+    ).count()
+
+    agent_runs = db.query(LivelihoodAgentSession).all()
+    agent_completed = sum(row.status in {
+        "goal_achieved", "human_verification_required",
+        "required_information_unavailable", "deterministic_fallback",
+        "agent_failure",
+    } for row in agent_runs)
+    fallback_runs = sum(row.status == "deterministic_fallback" for row in agent_runs)
+    escalations = sum(
+        row.status == "human_verification_required"
+        or bool((row.final_action or {}).get("requires_counsellor_review"))
+        for row in agent_runs
+    )
+
+    return {
+        "metrics": {
+            "llm_operations": len(provider),
+            "llm_failures": llm_failures,
+            "llm_failure_rate": round(llm_failures / len(provider), 4) if provider else None,
+            "llm_latency_ms": {
+                "mean": round(sum(latencies) / len(latencies), 2) if latencies else None,
+                "p95": round(latencies[p95_index], 2) if p95_index is not None else None,
+            },
+            "retrieval_operations": len(retrieval),
+            "retrieval_failures": retrieval_failures,
+            "retrieval_failure_rate": round(retrieval_failures / len(retrieval), 4) if retrieval else None,
+            "json_validation_failures": json_validation_failures,
+            "json_validation_failure_rate": round(json_validation_failures / len(validation), 4) if validation else None,
+            "tool_failures": tool_failed,
+            "agent_runs": len(agent_runs),
+            "agent_completion_rate": round(agent_completed / len(agent_runs), 4) if agent_runs else None,
+            "fallback_rate": round(fallback_runs / len(agent_runs), 4) if agent_runs else None,
+            "human_escalation_rate": round(escalations / len(agent_runs), 4) if agent_runs else None,
+        },
+        "definitions": {
+            "llm_operations": "Persisted provider-call observations.",
+            "llm_failures": "Provider timeout, provider error, or unavailable outcomes.",
+            "retrieval_operations": "Persisted RAG retrieval observations.",
+            "retrieval_failures": "RAG retriever exceptions; no-result retrievals are not failures.",
+            "json_validation_failures": "Structured AI responses rejected as invalid JSON or schema-invalid.",
+            "tool_failures": "Allowlisted livelihood-tool executions recorded as failed.",
+            "agent_completion_rate": "Terminal livelihood-agent runs divided by all persisted agent runs.",
+            "fallback_rate": "Livelihood-agent runs ending in deterministic fallback divided by all agent runs.",
+            "human_escalation_rate": "Agent runs ending in human verification or requiring counsellor review divided by all agent runs.",
+        },
+        "coverage": {
+            "prompts_and_raw_answers_stored": False,
+            "retrieval_failure_events": "persisted",
+            "tool_failures": "derived from bounded audit logs",
+            "agent_metrics": "derived from persisted agent sessions",
         },
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }

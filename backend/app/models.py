@@ -248,3 +248,18 @@ class KnowledgeChunk(Base):
     ocr_language:Mapped[str|None]=mapped_column(String,nullable=True)
     ocr_confidence:Mapped[float|None]=mapped_column(Float,nullable=True)
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow)
+
+class AIOperationMetric(Base):
+    __tablename__="ai_operation_metrics"
+    id:Mapped[int]=mapped_column(primary_key=True)
+    request_id:Mapped[str]=mapped_column(String,index=True)
+    session_id:Mapped[str|None]=mapped_column(String,index=True,nullable=True)
+    operation:Mapped[str]=mapped_column(String,index=True)
+    model:Mapped[str]=mapped_column(String,default="disabled")
+    event_kind:Mapped[str]=mapped_column(String,index=True,default="operation")
+    latency_ms:Mapped[float]=mapped_column(Float)
+    outcome:Mapped[str]=mapped_column(String,index=True)
+    validation_failure:Mapped[bool]=mapped_column(Boolean,default=False)
+    prompt_tokens:Mapped[int|None]=mapped_column(Integer,nullable=True)
+    completion_tokens:Mapped[int|None]=mapped_column(Integer,nullable=True)
+    created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=utcnow,index=True)
