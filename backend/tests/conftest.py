@@ -12,8 +12,10 @@ import pytest
 @pytest.fixture(autouse=True)
 def reset_login_rate_limiter():
     """Keep process-local auth limiter state isolated between tests."""
-    from app.main import login_rate_limiter
+    from app.main import login_rate_limiter, refresh_rate_limiter
 
     login_rate_limiter._events.clear()
+    refresh_rate_limiter._events.clear()
     yield
     login_rate_limiter._events.clear()
+    refresh_rate_limiter._events.clear()
