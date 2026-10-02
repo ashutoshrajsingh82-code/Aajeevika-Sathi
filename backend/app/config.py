@@ -7,11 +7,21 @@ FRONTEND_ORIGIN=os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 AUTH_SECRET=os.getenv("AUTH_SECRET", "local-demo-signing-key-change-before-deploy")
 AUTH_COOKIE_SECURE=os.getenv("AUTH_COOKIE_SECURE", "false" if DEMO_MODE else "true").lower()=="true"
 AUTH_COOKIE_NAME="aajeevika_access"
+AUTH_REFRESH_COOKIE_NAME="aajeevika_refresh"
 AUTH_COOKIE_HOURS=int(os.getenv("AUTH_COOKIE_HOURS", "8"))
+AUTH_REFRESH_COOKIE_HOURS=int(os.getenv("AUTH_REFRESH_COOKIE_HOURS", "168"))
 DEMO_ADMIN_USERNAME=os.getenv("DEMO_ADMIN_USERNAME","admin")
 DEMO_ADMIN_PASSWORD=os.getenv("DEMO_ADMIN_PASSWORD","admin-demo-change-me")
 DEMO_COUNSELLOR_USERNAME=os.getenv("DEMO_COUNSELLOR_USERNAME","counsellor")
 DEMO_COUNSELLOR_PASSWORD=os.getenv("DEMO_COUNSELLOR_PASSWORD","counsellor-demo-change-me")
+if AUTH_COOKIE_HOURS < 1 or AUTH_COOKIE_HOURS > 24:
+    raise RuntimeError("AUTH_COOKIE_HOURS must be between 1 and 24")
+if AUTH_REFRESH_COOKIE_HOURS < 1 or AUTH_REFRESH_COOKIE_HOURS > 720:
+    raise RuntimeError("AUTH_REFRESH_COOKIE_HOURS must be between 1 and 720")
+
+if LOGIN_RATE_LIMIT < 1 or LOGIN_RATE_WINDOW_SECONDS < 1:
+    raise RuntimeError("Login rate-limit settings must be positive")
+
 if not DEMO_MODE:
     if not os.getenv("AUTH_SECRET"):raise RuntimeError("Production auth configuration missing: AUTH_SECRET")
     AUTH_SECRET=os.environ["AUTH_SECRET"]
