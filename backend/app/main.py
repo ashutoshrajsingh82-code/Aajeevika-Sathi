@@ -3365,7 +3365,15 @@ def get_livelihood_agent_status(
         .all()
     )
 
-    if handoffs and not can_access_case(staff, handoffs):
+    # A newly selected pathway may have an OPEN, unassigned handoff.
+    # That handoff is part of the workflow and must not block the agent
+    # status endpoint. Restrict access once a counsellor is assigned.
+    assigned_handoffs = [
+        handoff
+        for handoff in handoffs
+        if handoff.assigned_to
+    ]
+    if assigned_handoffs and not can_access_case(staff, assigned_handoffs):
         raise HTTPException(
             403,
             "Assign this case before accessing its agent status",
