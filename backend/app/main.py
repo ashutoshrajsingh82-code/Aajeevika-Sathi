@@ -482,7 +482,7 @@ def login(
         max_age=AUTH_COOKIE_HOURS * 3600,
         httponly=True,
         secure=AUTH_COOKIE_SECURE,
-        samesite="strict",
+        samesite="none",
         path="/",
     )
     response.set_cookie(
@@ -491,7 +491,7 @@ def login(
         max_age=AUTH_REFRESH_COOKIE_HOURS * 3600,
         httponly=True,
         secure=AUTH_COOKIE_SECURE,
-        samesite="strict",
+        samesite="none",
         path="/api/v1/auth",
     )
 
@@ -523,7 +523,7 @@ def refresh_auth(
         max_age=AUTH_COOKIE_HOURS * 3600,
         httponly=True,
         secure=AUTH_COOKIE_SECURE,
-        samesite="strict",
+        samesite="none",
         path="/",
     )
     return {"username": user.username, "role": user.role, "refreshed": True}
@@ -543,14 +543,14 @@ def logout(response: Response):
         path="/",
         httponly=True,
         secure=AUTH_COOKIE_SECURE,
-        samesite="strict",
+        samesite="none",
     )
     response.delete_cookie(
         AUTH_REFRESH_COOKIE_NAME,
         path="/api/v1/auth",
         httponly=True,
         secure=AUTH_COOKIE_SECURE,
-        samesite="strict",
+        samesite="none",
     )
 
     return {
